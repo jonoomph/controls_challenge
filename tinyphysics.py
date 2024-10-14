@@ -5,6 +5,8 @@ import onnxruntime as ort
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
 import seaborn as sns
 import signal
 import urllib.request
@@ -197,18 +199,51 @@ class TinyPhysicsSimulator:
     for _ in range(CONTEXT_LENGTH, len(self.data)):
       self.step()
       if self.debug and self.step_idx % 10 == 0:
-        print(f"Step {self.step_idx:<5}: Current lataccel: {self.current_lataccel:>6.2f}, Target lataccel: {self.target_lataccel_history[-1]:>6.2f}")
-        self.plot_data(ax[0], [(self.target_lataccel_history, 'Target lataccel'), (self.current_lataccel_history, 'Current lataccel')], ['Step', 'Lateral Acceleration'], 'Lateral Acceleration')
+        print(
+          f"Step {self.step_idx:<5}: Current lataccel: {self.current_lataccel:>6.2f}, Target lataccel: {self.target_lataccel_history[-1]:>6.2f}")
+
+        # Plot current and target lateral acceleration
+        self.plot_data(ax[0], [
+          (self.target_lataccel_history, 'Target lataccel'),
+          (self.current_lataccel_history, 'Current lataccel')
+        ], ['Step', 'Lateral Acceleration'], 'Lateral Acceleration')
+
+        # Overlay future lateral acceleration
+        future_steps = range(self.step_idx + 1, self.step_idx + 1 + len(self.futureplan.lataccel))
+        ax[0].plot(future_steps, self.futureplan.lataccel, label='Future lataccel', linestyle='--', color='orange')
+        ax[0].legend()
+
+        # Plot current road roll
+        self.plot_data(ax[2], [
+          (np.array(self.state_history)[:, 0], 'Roll Lateral Acceleration')
+        ], ['Step', 'Lateral Accel due to Road Roll'], 'Lateral Accel due to Road Roll')
+
+        # Overlay future road roll
+        future_roll_steps = range(self.step_idx + 1, self.step_idx + 1 + len(self.futureplan.roll_lataccel))
+        ax[2].plot(future_roll_steps, self.futureplan.roll_lataccel, label='Future Roll Lateral Accel', linestyle='--',
+                   color='green')
+        ax[2].legend()
+
+        # Plot current v_ego
+        self.plot_data(ax[3], [
+          (np.array(self.state_history)[:, 1], 'v_ego')
+        ], ['Step', 'v_ego'], 'v_ego')
+
+        # Overlay future v_ego
+        future_vego_steps = range(self.step_idx + 1, self.step_idx + 1 + len(self.futureplan.v_ego))
+        ax[3].plot(future_vego_steps, self.futureplan.v_ego, label='Future v_ego', linestyle='--', color='purple')
+        ax[3].legend()
+
+        # Plot action history
         self.plot_data(ax[1], [(self.action_history, 'Action')], ['Step', 'Action'], 'Action')
-        self.plot_data(ax[2], [(np.array(self.state_history)[:, 0], 'Roll Lateral Acceleration')], ['Step', 'Lateral Accel due to Road Roll'], 'Lateral Accel due to Road Roll')
-        self.plot_data(ax[3], [(np.array(self.state_history)[:, 1], 'v_ego')], ['Step', 'v_ego'], 'v_ego')
+
         plt.pause(0.01)
 
     if self.debug:
       plt.ioff()
       plt.show()
-    return self.compute_cost()
 
+    return self.compute_cost()
 
 def get_available_controllers():
   return [f.stem for f in Path('controllers').iterdir() if f.is_file() and f.suffix == '.py' and f.stem != '__init__']
