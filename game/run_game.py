@@ -103,7 +103,7 @@ def draw_arrow(screen, road_x, road_y, road_roll):
     max_arrow_length = 200  # Max arrow length in pixels
     arrow_height = 2        # Height of the arrow line in pixels
     triangle_size = 10      # Size of the triangle at the end of the arrow
-    threshold = 0.30        # Threshold below which we don't show the triangle
+    threshold = 0.0        # Threshold below which we don't show the triangle
 
     # Calculate the length of the arrow based on road_roll magnitude
     arrow_length = max_arrow_length * abs(road_roll)
@@ -121,7 +121,7 @@ def draw_arrow(screen, road_x, road_y, road_roll):
     # Draw the triangle if abs(road_roll) >= threshold
     if abs(road_roll) >= threshold:
         # Draw the horizontal line (2px tall)
-        pygame.draw.line(screen, TEAL, (start_x, start_y), (end_x, start_y), arrow_height)
+        pygame.draw.line(screen, WHITE, (start_x, start_y), (end_x, start_y), arrow_height)
 
         # Triangle points to the direction of the roll
         if road_roll > 0:  # Roll to the right
@@ -134,7 +134,7 @@ def draw_arrow(screen, road_x, road_y, road_roll):
                                (end_x + triangle_size, start_y + triangle_size // 2)]
 
         # Draw the triangle
-        pygame.draw.polygon(screen, TEAL, triangle_points)
+        pygame.draw.polygon(screen, WHITE, triangle_points)
 
 # Generate sigmoid-based torque levels
 def sigmoid_space(min_value, max_value, num_steps):
@@ -304,10 +304,10 @@ def end_screen(won, pid_score, current_score, previous_score, next_level_callbac
     # Determine the color and sign for the difference
     if difference < 0:
         difference_message = f"-{abs(difference):.2f}"  # Negative value means better score
-        diff_color = (0, 255, 0)  # Green for improvement
+        diff_color = GREEN  # Green for improvement
     else:
         difference_message = f"+{difference:.2f}"  # Positive value means worse score
-        diff_color = (255, 0, 0)  # Red for worse score
+        diff_color = RED  # Red for worse score
 
     # Display "You Win" in green or "You Lose" in red
     if won:
