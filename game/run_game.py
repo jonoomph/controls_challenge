@@ -2,7 +2,7 @@ import pygame
 import tinyphysics
 import numpy as np
 from tinyphysics import CONTEXT_LENGTH
-from controllers import BaseController, pid
+from controllers import BaseController, pid, replay
 import os
 import json
 
@@ -61,9 +61,6 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
     current_segment_y = car_y
     screen.blit(road_image, (road_x, current_segment_y))
 
-    # Draw the arrow for current road roll
-    draw_arrow(screen, road_x, current_segment_y, roll_lataccel)
-
     # Draw future segments with road roll arrows
     for i, fut_lataccel in enumerate(future_plan.lataccel):
         lataccel_diff = current_lataccel - fut_lataccel
@@ -76,9 +73,15 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
         else:
             screen.blit(road_image, (road_x, segment_y))
 
-        # Draw the arrow for future road rolls
-        future_road_roll = future_plan.roll_lataccel[i]  # Assuming road rolls match lataccel
-        draw_arrow(screen, road_x, segment_y, future_road_roll)
+        # Calculate delta between future road rolls and draw arrow if necessary
+        if i == 0:
+            prev_road_roll = roll_lataccel
+        else:
+            prev_road_roll = future_plan.roll_lataccel[i - 1]
+        future_road_roll = future_plan.roll_lataccel[i]
+        roll_delta = future_road_roll - prev_road_roll
+        draw_arrow(screen, road_x, segment_y, roll_delta)
+
 
 def draw_steering(screen, torque_value):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
@@ -101,54 +104,59 @@ def draw_steering(screen, torque_value):
 
 def draw_arrow(screen, road_x, road_y, road_roll):
     # Constants
-    max_arrow_length = 200  # Max arrow length in pixels
-    arrow_height = 2        # Height of the arrow line in pixels
-    triangle_size = 10      # Size of the triangle at the end of the arrow
-    threshold = 0.0        # Threshold below which we don't show the triangle
+    max_arrow_length = 6000  # Max arrow length in pixels, used to scale road roll
+    arrow_height = 2         # Height of the arrow line in pixels
+    triangle_size = 10       # Size of the triangle at the end of the arrow
+    threshold = 15.0         # Threshold below which we don't show the triangle
 
     # Calculate the length of the arrow based on road_roll magnitude
     arrow_length = max_arrow_length * abs(road_roll)
+    road_center = ROAD_WIDTH // 2
 
-    # Define start position of the arrow (right side of the road)
-    start_x = road_x + ROAD_WIDTH // 2 + 120  # 20px to the right of the road
+    # Define the side of the road where the arrow should be drawn
+    if road_roll > 0:
+        start_x = road_x + road_center - 120  # Left side of the road
+        end_x = start_x - arrow_length  # Arrow points left
+    else:
+        start_x = road_x + road_center + 120  # Right side of the road
+        end_x = start_x + arrow_length  # Arrow points right
+
     start_y = road_y
 
-    # Define end position based on the sign of the road_roll
-    if road_roll > 0:
-        end_x = start_x + arrow_length  # Arrow to the right
-    else:
-        end_x = start_x - arrow_length  # Arrow to the left
-
-    # Draw the triangle if abs(road_roll) >= threshold
-    if abs(road_roll) >= threshold:
+    # Draw the triangle if abs(road_roll) is above the threshold
+    if abs(arrow_length) >= threshold:
         # Draw the horizontal line (2px tall)
         pygame.draw.line(screen, WHITE, (start_x, start_y), (end_x, start_y), arrow_height)
 
         # Triangle points to the direction of the roll
-        if road_roll > 0:  # Roll to the right
-            triangle_points = [(end_x, start_y),
-                               (end_x - triangle_size, start_y - triangle_size // 2),
-                               (end_x - triangle_size, start_y + triangle_size // 2)]
-        else:  # Roll to the left
+        if road_roll > 0:
             triangle_points = [(end_x, start_y),
                                (end_x + triangle_size, start_y - triangle_size // 2),
                                (end_x + triangle_size, start_y + triangle_size // 2)]
+        else:
+            triangle_points = [(end_x, start_y),
+                               (end_x - triangle_size, start_y - triangle_size // 2),
+                               (end_x - triangle_size, start_y + triangle_size // 2)]
 
         # Draw the triangle
         pygame.draw.polygon(screen, WHITE, triangle_points)
 
-# Generate sigmoid-based torque levels
-def sigmoid_space(min_value, max_value, num_steps):
-    x = np.linspace(-6, 6, num_steps)  # Create a range of values centered around 0
-    sigmoid = 1 / (1 + np.exp(-x))  # Sigmoid function
-    return min_value + (max_value - min_value) * sigmoid
+def inverse_sigmoid_space(min_value, max_value, num_steps):
+    x = np.linspace(0.01, 0.99, num_steps)  # Avoid 0 and 1 to prevent inf values
+    inverse_sigmoid = np.log(x / (1 - x))  # Inverse sigmoid (logit) function
 
+    # Normalize to [0, 1] range
+    normalized = (inverse_sigmoid - inverse_sigmoid.min()) / (inverse_sigmoid.max() - inverse_sigmoid.min())
+
+    # Scale to desired range
+    return min_value + (max_value - min_value) * normalized
 
 class Controller(BaseController):
     def __init__(self, level):
         super().__init__()
         self.level = level
         self.internal_pid = pid.Controller()
+        self.internal_replay = replay.Controller(level)
         self.torques = []
         self.lat_accel_cost = 0
         self.jerk_cost = 0
@@ -157,8 +165,9 @@ class Controller(BaseController):
         # Initialize torque levels for 1024 steps
         self.min_torque = -2.0
         self.max_torque = 2.0
-        self.num_steps = 80
+        self.num_steps = 111
         self.torque_levels = np.linspace(self.min_torque, self.max_torque, self.num_steps)
+        #self.torque_levels = inverse_sigmoid_space(self.min_torque, self.max_torque, self.num_steps)
         self.current_torque_index = self.num_steps // 2  # Start at zero torque
 
         # Initialize font for displaying score
@@ -182,6 +191,20 @@ class Controller(BaseController):
         screen.blit(jerk_text, (20, 60))
         screen.blit(total_text, (20, 100))
 
+    def draw_replay(self):
+        # Create the text surface
+        replay_text = self.font.render("REPLAY", True, WHITE, BLACK)
+
+        # Get the width and height of the text surface
+        text_width, text_height = replay_text.get_size()
+
+        # Position the text in the top-right corner of the screen
+        x_position = WIDTH - text_width - 25  # 20px padding from the right
+        y_position = 60  # 20px padding from the top
+
+        # Draw the text with the background
+        screen.blit(replay_text, (x_position , y_position))
+
     def draw_level(self, level_num):
         # Create the text surface for the level number
         level_text = self.level_font.render(f"Level: {level_num}", True, WHITE)
@@ -192,6 +215,7 @@ class Controller(BaseController):
     def update(self, target_lataccel, current_lataccel, state, future_plan):
         pygame.event.pump()  # Necessary to process events
         pid_action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan)
+        replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan)
 
         # Get raw joystick input [-1, 1]
         #raw_input = -joystick.get_axis(0)
@@ -215,7 +239,8 @@ class Controller(BaseController):
 
         # Increment
         if keys[pygame.K_LCTRL]:
-            FPS /= 3
+            #FPS /= 3
+            increment = 2
         if keys[pygame.K_LSHIFT]:
             FPS *= 2
         clock.tick(FPS)
@@ -228,16 +253,16 @@ class Controller(BaseController):
             # Increase torque index (turn right)
             self.current_torque_index = min(max(self.current_torque_index - increment, 0), self.num_steps - 1)
         else:
+            pass
             # Gradually move towards target (slow auto-steer)
-            if index % 5 == 0 and abs(lataccel_diff) > 0.10:
-                if lataccel_diff > 0.0:
-                    self.current_torque_index -= 1
-                else:
-                    self.current_torque_index += 1
+            # if index % 5 == 0 and abs(lataccel_diff) > 0.10:
+            #     if lataccel_diff > 0.0:
+            #         self.current_torque_index -= 1
+            #     else:
+            #         self.current_torque_index += 1
 
         # Get the torque output from the torque levels array
-        torque_output = self.torque_levels[self.current_torque_index]# + pid_action
-        #print(lataccel_diff, torque_output)
+        torque_output = self.torque_levels[self.current_torque_index]
 
         # Rotate the car based on current lateral acceleration
         car_rotation = torque_output * 10  # Adjust the multiplier for realistic rotation
@@ -249,6 +274,11 @@ class Controller(BaseController):
         draw_road(screen, future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
         draw_car(screen, WIDTH // 2, HEIGHT - 100, car_rotation)
         draw_steering(screen, torque_output)
+
+        # Use replay data (if key pressed)
+        if keys[pygame.K_SPACE]:
+            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
+            self.draw_replay()
 
         # Draw the score at the top
         self.draw_score()
@@ -263,7 +293,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 127
+LEVEL_NUM = 124
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
@@ -312,7 +342,7 @@ def end_screen(won, pid_score, current_score, previous_score, next_level_callbac
     difference = current_score - previous_score  # Positive means worse, negative means better
 
     # Determine the color and sign for the difference
-    if difference < 0:
+    if difference <= 0:
         difference_message = f"-{abs(difference):.2f}"  # Negative value means better score
         diff_color = GREEN  # Green for improvement
     else:
@@ -415,18 +445,19 @@ def main():
 
         if sim.step_idx < len(sim.data):
             sim.step()
-            if sim.step_idx > 100 and sim.step_idx % 10 == 0:
+            if sim.step_idx > 100 and sim.step_idx % 10 == 0 or sim.step_idx == len(sim.data) - 1:
                 score = sim.compute_cost()
                 controller.update_score(score)
 
         else:
             current_score = controller.total_cost
             pid_score = pid_sim.compute_cost().get("total_cost")
+            previous_score = high_scores.get(f"{LEVEL_NUM:05}", 0.0)
             if check_high_score(f"{LEVEL_NUM:05}", current_score):
                 won = True
                 save_torques(controller.torques, f"{LEVEL_NUM:05}")
 
-            end_screen(won, pid_score, current_score, high_scores.get(f"{LEVEL_NUM:05}", float('inf')), next_level_callback, try_again_callback)
+            end_screen(won, pid_score, current_score, previous_score, next_level_callback, try_again_callback)
             running = False
 
 
