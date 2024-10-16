@@ -263,7 +263,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 124
+LEVEL_NUM = 127
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
@@ -284,7 +284,7 @@ def save_torques(torques, data_file_name):
 # Function to save high scores
 def save_high_scores():
     with open(SCORES_FILE, "w") as f:
-        json.dump(high_scores, f)
+        json.dump(high_scores, f, indent=4)
 
 def check_high_score(data_file_name, current_score):
     if data_file_name in high_scores:
