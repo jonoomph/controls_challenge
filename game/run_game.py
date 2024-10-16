@@ -25,7 +25,8 @@ pygame.display.set_caption("Car Simulation")
 
 # Set up the clock to control the FPS
 clock = pygame.time.Clock()
-FPS = 8
+BASE_FPS = 8
+SCALE_FPS = False
 
 # Assuming there is only one joystick (your PS5 controller)
 # joystick = pygame.joystick.Joystick(0)
@@ -201,14 +202,23 @@ class Controller(BaseController):
         # Determine position on road and SIM index
         lataccel_diff = current_lataccel - target_lataccel
         index = len(self.torques)
+        increment = 1
 
         # # Get the state of all keyboard buttons
         keys = pygame.key.get_pressed()
 
+        # Calculate FPS based on vego
+        if SCALE_FPS:
+            FPS = 10.0 * (state.v_ego / 22.0)
+        else:
+            FPS = BASE_FPS
+
         # Increment
-        increment = 1
         if keys[pygame.K_LCTRL]:
-            increment = 15
+            FPS /= 3
+        if keys[pygame.K_LSHIFT]:
+            FPS *= 2
+        clock.tick(FPS)
 
         # Adjust torque index based on key presses
         if keys[pygame.K_LEFT]:
@@ -253,7 +263,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 120
+LEVEL_NUM = 124
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
@@ -409,7 +419,6 @@ def main():
                 score = sim.compute_cost()
                 controller.update_score(score)
 
-            clock.tick(FPS)
         else:
             current_score = controller.total_cost
             pid_score = pid_sim.compute_cost().get("total_cost")
