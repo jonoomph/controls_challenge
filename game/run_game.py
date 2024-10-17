@@ -5,6 +5,7 @@ from tinyphysics import CONTEXT_LENGTH
 from controllers import BaseController, pid, replay
 import os
 import json
+import math
 
 
 # Initialize PyGame and the PS5 controller
@@ -154,16 +155,6 @@ def draw_arrow(screen, road_x, road_y, road_roll):
         # Draw the triangle
         pygame.draw.polygon(screen, WHITE, triangle_points)
 
-def inverse_sigmoid_space(min_value, max_value, num_steps):
-    x = np.linspace(0.01, 0.99, num_steps)  # Avoid 0 and 1 to prevent inf values
-    inverse_sigmoid = np.log(x / (1 - x))  # Inverse sigmoid (logit) function
-
-    # Normalize to [0, 1] range
-    normalized = (inverse_sigmoid - inverse_sigmoid.min()) / (inverse_sigmoid.max() - inverse_sigmoid.min())
-
-    # Scale to desired range
-    return min_value + (max_value - min_value) * normalized
-
 class Controller(BaseController):
     def __init__(self, level):
         super().__init__()
@@ -180,8 +171,8 @@ class Controller(BaseController):
         self.max_torque = 2.0
         self.num_steps = 111
         self.torque_levels = np.linspace(self.min_torque, self.max_torque, self.num_steps)
-        #self.torque_levels = inverse_sigmoid_space(self.min_torque, self.max_torque, self.num_steps)
         self.current_torque_index = self.num_steps // 2  # Start at zero torque
+        self.initial_steer = np.zeros(100)
 
         # Initialize font for displaying score
         self.font = pygame.font.Font(None, 36)
@@ -294,6 +285,11 @@ class Controller(BaseController):
         if keys[pygame.K_SPACE]:
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
             self.draw_replay()
+
+        # Use initial steer (if any)
+        if index + 20 < len(self.initial_steer):
+            torque_output = self.initial_steer[index + 20]
+            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - torque_output))
 
         # Draw the score at the top
         self.draw_score()
@@ -436,6 +432,7 @@ def main():
 
     sim_model = tinyphysics.TinyPhysicsModel(MODEL_PATH, debug=DEBUG)
     sim = tinyphysics.TinyPhysicsSimulator(sim_model, str(DATA_PATH), controller=controller, debug=DEBUG)
+    controller.initial_steer = [steer for steer in sim.data.get("steer_command") if not math.isnan(steer)]
     sim.step_idx = CONTEXT_LENGTH
     running = True
     won = False
