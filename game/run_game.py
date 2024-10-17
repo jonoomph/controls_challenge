@@ -35,7 +35,10 @@ SCALE_FPS = False
 # Load images
 background_image = pygame.image.load("images/background.png").convert()
 car_image = pygame.image.load("images/car.png").convert_alpha()
-road_image = pygame.image.load("images/road.png").convert_alpha()
+road1_image = pygame.image.load("images/road.png").convert_alpha()
+road2_image = pygame.image.load("images/road-1.png").convert_alpha()
+road3_image = pygame.image.load("images/road-2.png").convert_alpha()
+road4_image = pygame.image.load("images/road-3.png").convert_alpha()
 road_checker_image = pygame.image.load("images/road-checker.png").convert_alpha()
 wheel_image = pygame.image.load("images/wheel.png").convert_alpha()
 
@@ -52,6 +55,16 @@ def draw_car(screen, car_x, car_y, rotation_angle):
     rotated_car = pygame.transform.rotate(car_image, rotation_angle)
     screen.blit(rotated_car, rotated_car.get_rect(center=(car_x, car_y)))
 
+def get_road_segment_image(index):
+    if index < 144:
+        return road1_image
+    elif index < 288:
+        return road2_image
+    elif index < 433:
+        return road3_image
+    else:
+        return road4_image
+
 def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, roll_lataccel, index):
     lataccel_diff = current_lataccel - target_lataccel
     road_center_x = (WIDTH // 2) + (lataccel_diff * ROAD_AGGRESSIVE_FACTOR)
@@ -59,7 +72,7 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
     # Draw the road directly under the car
     road_x = road_center_x - (ROAD_WIDTH // 2)
     current_segment_y = car_y
-    screen.blit(road_image, (road_x, current_segment_y))
+    screen.blit(get_road_segment_image(index), (road_x, current_segment_y))
 
     # Draw future segments with road roll arrows
     for i, fut_lataccel in enumerate(future_plan.lataccel):
@@ -71,7 +84,7 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
         if index + i in [80, 577]:
             screen.blit(road_checker_image, (road_x, segment_y))
         else:
-            screen.blit(road_image, (road_x, segment_y))
+            screen.blit(get_road_segment_image(i + index), (road_x, segment_y))
 
         # Calculate delta between future road rolls and draw arrow if necessary
         if i == 0:
@@ -181,15 +194,18 @@ class Controller(BaseController):
         self.total_cost = score['total_cost']
 
     def draw_score(self):
+        global BASE_FPS
         # Create the text surfaces
         lat_text = self.font.render(f"Lat: {self.lat_accel_cost:.2f}", True, WHITE)
         jerk_text = self.font.render(f"Jerk: {self.jerk_cost:.2f}", True, WHITE)
         total_text = self.font.render(f"Total: {self.total_cost:.2f}", True, WHITE)
+        fps_text = self.font.render(f"FPS: {BASE_FPS}", True, WHITE)
 
         # Position the text at the top of the screen
         screen.blit(lat_text, (20, 20))
         screen.blit(jerk_text, (20, 60))
         screen.blit(total_text, (20, 100))
+        screen.blit(fps_text, (20, 140))
 
     def draw_replay(self):
         # Create the text surface
@@ -213,6 +229,7 @@ class Controller(BaseController):
         screen.blit(level_text, (WIDTH - level_text.get_width() - 20, 20))
 
     def update(self, target_lataccel, current_lataccel, state, future_plan):
+        global BASE_FPS
         pygame.event.pump()  # Necessary to process events
         pid_action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan)
         replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan)
@@ -224,12 +241,19 @@ class Controller(BaseController):
         #torque_output = pid_action + self.non_linear_mapping(raw_input, exponent) * 1.5
 
         # Determine position on road and SIM index
-        lataccel_diff = current_lataccel - target_lataccel
         index = len(self.torques)
         increment = 1
 
         # # Get the state of all keyboard buttons
         keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_UP]:
+            BASE_FPS += 2
+        elif keys[pygame.K_DOWN]:
+            BASE_FPS -= 2
+
+        # Limit FPS
+        BASE_FPS = min(max(BASE_FPS, 2), 60)
 
         # Calculate FPS based on vego
         if SCALE_FPS:
@@ -239,7 +263,6 @@ class Controller(BaseController):
 
         # Increment
         if keys[pygame.K_LCTRL]:
-            #FPS /= 3
             increment = 2
         if keys[pygame.K_LSHIFT]:
             FPS *= 2
@@ -252,14 +275,6 @@ class Controller(BaseController):
         elif keys[pygame.K_RIGHT]:
             # Increase torque index (turn right)
             self.current_torque_index = min(max(self.current_torque_index - increment, 0), self.num_steps - 1)
-        else:
-            pass
-            # Gradually move towards target (slow auto-steer)
-            # if index % 5 == 0 and abs(lataccel_diff) > 0.10:
-            #     if lataccel_diff > 0.0:
-            #         self.current_torque_index -= 1
-            #     else:
-            #         self.current_torque_index += 1
 
         # Get the torque output from the torque levels array
         torque_output = self.torque_levels[self.current_torque_index]
@@ -293,7 +308,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 124
+LEVEL_NUM = 1
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
