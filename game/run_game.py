@@ -308,7 +308,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 1
+LEVEL_NUM = 432
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
