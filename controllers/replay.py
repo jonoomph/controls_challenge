@@ -4,7 +4,7 @@ from . import BaseController
 import numpy as np
 
 class Controller(BaseController):
-    def __init__(self, level_num=322):
+    def __init__(self, level_num=4):
         level_file_path = f'/home/jonathan/apps/controls_challenge/game/data/{level_num:05}.npy'
         if os.path.exists(level_file_path):
             print(f"Loading replay data: {level_file_path}")

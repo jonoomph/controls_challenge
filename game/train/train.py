@@ -10,11 +10,10 @@ import os
 import random
 
 
-EPOCHS = 60
+EPOCHS = 80
 WINDOW_SIZE = 7
 EXPORT_INTERVAL = 5
 BATCH_SIZE = 36
-CONTEXT_LENGTH = 20
 
 model = PIDControllerNet()
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
@@ -147,7 +146,7 @@ def start_training():
                 tensor_data = torch.load(file_path)
 
                 # Get the subset of data
-                tensor_data_subset = tensor_data[80:]
+                tensor_data_subset = tensor_data #[80:]
 
                 for row in tensor_data_subset:
                     input_tensor = row[0]

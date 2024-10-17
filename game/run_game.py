@@ -267,6 +267,15 @@ class Controller(BaseController):
             # Increase torque index (turn right)
             self.current_torque_index = min(max(self.current_torque_index - increment, 0), self.num_steps - 1)
 
+        # Use replay data (if key pressed)
+        if keys[pygame.K_SPACE]:
+            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
+
+        # Use initial steer (if any)
+        if index + 20 < len(self.initial_steer):
+            torque_output = self.initial_steer[index + 20]
+            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - torque_output))
+
         # Get the torque output from the torque levels array
         torque_output = self.torque_levels[self.current_torque_index]
 
@@ -280,16 +289,8 @@ class Controller(BaseController):
         draw_road(screen, future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
         draw_car(screen, WIDTH // 2, HEIGHT - 100, car_rotation)
         draw_steering(screen, torque_output)
-
-        # Use replay data (if key pressed)
         if keys[pygame.K_SPACE]:
-            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
             self.draw_replay()
-
-        # Use initial steer (if any)
-        if index + 20 < len(self.initial_steer):
-            torque_output = self.initial_steer[index + 20]
-            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - torque_output))
 
         # Draw the score at the top
         self.draw_score()
@@ -304,7 +305,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 322
+LEVEL_NUM = 1
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
