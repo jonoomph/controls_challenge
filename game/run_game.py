@@ -254,7 +254,7 @@ class Controller(BaseController):
 
         # Increment
         if keys[pygame.K_LCTRL]:
-            increment = 2
+            increment = 3
         if keys[pygame.K_LSHIFT]:
             FPS *= 2
         clock.tick(FPS)
@@ -304,7 +304,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 432
+LEVEL_NUM = 322
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
