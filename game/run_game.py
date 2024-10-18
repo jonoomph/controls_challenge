@@ -97,7 +97,7 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
         draw_arrow(screen, road_x, segment_y, roll_delta)
 
 
-def draw_steering(screen, torque_value):
+def draw_steering(screen, torque_value, increment):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
     rotation_angle = -torque_value * 90  # Each torque unit corresponds to 180 degrees (since 2*180=360)
 
@@ -112,9 +112,11 @@ def draw_steering(screen, torque_value):
     font = pygame.font.Font(None, 32)
     torque_text = font.render(f"{torque_value:.2f}", True, WHITE)
     text_rect = torque_text.get_rect(center=wheel_rect.center)
+    increment_text = font.render(f"+{increment}", True, WHITE)
 
     # Draw the torque text in the middle of the wheel (unrotated)
-    screen.blit(torque_text, text_rect)
+    screen.blit(torque_text, (text_rect.x, text_rect.y + 5))
+    screen.blit(increment_text, (text_rect.x + 15, text_rect.y - 20))
 
 def draw_arrow(screen, road_x, road_y, road_roll):
     # Constants
@@ -167,6 +169,9 @@ class Controller(BaseController):
         self.total_cost = 0
 
         # Initialize torque levels for 1024 steps
+        self.increment = 1
+        self.ctrl_increment = 3
+        self.ctrl_pressed = False
         self.min_torque = -2.0
         self.max_torque = 2.0
         self.num_steps = 111
@@ -233,7 +238,6 @@ class Controller(BaseController):
 
         # Determine position on road and SIM index
         index = len(self.torques)
-        increment = 1
 
         # # Get the state of all keyboard buttons
         keys = pygame.key.get_pressed()
@@ -254,7 +258,25 @@ class Controller(BaseController):
 
         # Increment
         if keys[pygame.K_LCTRL]:
-            increment = 3
+            self.ctrl_pressed = True
+            self.increment = self.ctrl_increment
+        elif self.ctrl_pressed:
+            self.ctrl_pressed = False
+            self.increment = 1
+
+        if keys[pygame.K_1]:
+            self.ctrl_increment = 1
+        if keys[pygame.K_2]:
+            self.ctrl_increment = 2
+        if keys[pygame.K_3]:
+            self.ctrl_increment = 3
+        if keys[pygame.K_4]:
+            self.ctrl_increment = 4
+        if keys[pygame.K_5]:
+            self.ctrl_increment = 5
+        if keys[pygame.K_6]:
+            self.ctrl_increment = 6
+
         if keys[pygame.K_LSHIFT]:
             FPS *= 2
         clock.tick(FPS)
@@ -262,10 +284,10 @@ class Controller(BaseController):
         # Adjust torque index based on key presses
         if keys[pygame.K_LEFT]:
             # Decrease torque index (turn left)
-            self.current_torque_index = min(max(self.current_torque_index + increment, 0), self.num_steps - 1)
+            self.current_torque_index = min(max(self.current_torque_index + self.increment, 0), self.num_steps - 1)
         elif keys[pygame.K_RIGHT]:
             # Increase torque index (turn right)
-            self.current_torque_index = min(max(self.current_torque_index - increment, 0), self.num_steps - 1)
+            self.current_torque_index = min(max(self.current_torque_index - self.increment, 0), self.num_steps - 1)
 
         # Use replay data (if key pressed)
         if keys[pygame.K_SPACE]:
@@ -288,7 +310,7 @@ class Controller(BaseController):
         # Draw the road based on future lateral acceleration and target alignment
         draw_road(screen, future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
         draw_car(screen, WIDTH // 2, HEIGHT - 100, car_rotation)
-        draw_steering(screen, torque_output)
+        draw_steering(screen, torque_output, self.ctrl_increment)
         if keys[pygame.K_SPACE]:
             self.draw_replay()
 
@@ -305,7 +327,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 1
+LEVEL_NUM = 1055
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
