@@ -1,5 +1,4 @@
-/home/jonathan/apps/controls_challenge/.venv/bin/python /home/jonathan/apps/controls_challenge/game/train/find_bad_scores.py
-100%|██████████| 5000/5000 [31:59<00:00,  2.61it/s]
+
 Top 5000 Simulations Sorted by Total Cost (Worst to Best):
 #1 | File: 04959.csv | Total Cost: 2026.6959
 #2 | File: 04744.csv | Total Cost: 1569.4590

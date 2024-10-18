@@ -9,7 +9,7 @@ from controllers.pid_model import Controller
 
 model_path = Path('../../models/tinyphysics.onnx')
 DATAFILES_START = 0
-DATAFILES_LENGTH = 10
+DATAFILES_LENGTH = 20
 MAX_TRAINING_ROWS = 600
 
 
