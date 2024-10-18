@@ -97,7 +97,7 @@ def draw_road(screen, future_plan, car_y, current_lataccel, target_lataccel, rol
         draw_arrow(screen, road_x, segment_y, roll_delta)
 
 
-def draw_steering(screen, torque_value, increment):
+def draw_steering(screen, torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
     rotation_angle = -torque_value * 90  # Each torque unit corresponds to 180 degrees (since 2*180=360)
 
@@ -112,7 +112,11 @@ def draw_steering(screen, torque_value, increment):
     font = pygame.font.Font(None, 32)
     torque_text = font.render(f"{torque_value:.2f}", True, WHITE)
     text_rect = torque_text.get_rect(center=wheel_rect.center)
-    increment_text = font.render(f"+{increment}", True, WHITE)
+
+    increment_color = WHITE
+    if ctrl_pressed:
+        increment_color = GREEN
+    increment_text = font.render(f"+{increment}", True, increment_color)
 
     # Draw the torque text in the middle of the wheel (unrotated)
     screen.blit(torque_text, (text_rect.x, text_rect.y + 5))
@@ -170,7 +174,7 @@ class Controller(BaseController):
 
         # Initialize torque levels for 1024 steps
         self.increment = 1
-        self.ctrl_increment = 3
+        self.ctrl_increment = 2
         self.ctrl_pressed = False
         self.min_torque = -2.0
         self.max_torque = 2.0
@@ -310,7 +314,7 @@ class Controller(BaseController):
         # Draw the road based on future lateral acceleration and target alignment
         draw_road(screen, future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
         draw_car(screen, WIDTH // 2, HEIGHT - 100, car_rotation)
-        draw_steering(screen, torque_output, self.ctrl_increment)
+        draw_steering(screen, torque_output, self.ctrl_increment, self.ctrl_pressed)
         if keys[pygame.K_SPACE]:
             self.draw_replay()
 
@@ -327,7 +331,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 1055
+LEVEL_NUM = 1545
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
