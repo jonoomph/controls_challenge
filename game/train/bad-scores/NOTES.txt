@@ -1,0 +1,2 @@
+Reducing range from [(0, 8), (8, 16), (16, 24)]  to  [(0, 4), (4, 8), (8, 12)]: slight improvement. Total cost (100): 71.282
+Trying range [(0, 2), (2, 6), (6, 12)]: Nice improvement. Total cost (100): 66.190

@@ -8,20 +8,13 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 import os
 import random
+import string
+import warnings
+warnings.filterwarnings("ignore", message=".*weights_only=False.*")
 
 
-EPOCHS = 80
-WINDOW_SIZE = 7
-EXPORT_INTERVAL = 5
-BATCH_SIZE = 36
-
-model = PIDControllerNet()
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
-loss_fn = nn.MSELoss()
-
-
-class Controller:
-    def __init__(self, epoch, window_size):
+class TrainingRun:
+    def __init__(self, epoch, window_size, batch_size, optimizer, model, loss_fn):
         self.epoch = epoch
         self.total_loss = 0
         self.predictions = []
@@ -29,10 +22,13 @@ class Controller:
         self.window_size = window_size
         self.input_window = []
         self.output_window = []
-        self.process_count = 0
+        self.batch_size = batch_size
+        self.optimizer = optimizer
+        self.model = model
+        self.loss_fn = loss_fn
 
     def process_batch(self):
-        if len(self.predictions) >= BATCH_SIZE:
+        if len(self.predictions) >= self.batch_size:
             # Shuffle the batch
             combined = list(zip(self.predictions, self.solved))
             random.shuffle(combined)
@@ -43,12 +39,12 @@ class Controller:
             solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32).unsqueeze(1)
 
             # Calculate loss
-            loss = loss_fn(predictions_tensor, solved_tensor)
+            loss = self.loss_fn(predictions_tensor, solved_tensor)
 
             # Backpropagation: clear the gradients, perform backpropagation, and update the weights
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()
 
             # Clear the lists for the next batch
             self.predictions.clear()
@@ -76,14 +72,12 @@ class Controller:
             #     self.input_window.pop(0)
             #     self.output_window.pop(0)
             #     return
-            # else:
-            self.process_count += 1
 
             # Stack the inputs to form a windowed tensor
             input_tensor = torch.stack(self.input_window[-self.window_size:]).unsqueeze(0).squeeze(2)
 
             # Get the model output
-            model_output = model(input_tensor)
+            model_output = self.model(input_tensor)
 
             # Store the prediction and the PID output
             self.predictions.append(model_output)
@@ -97,17 +91,14 @@ class Controller:
             self.output_window.pop(0)
 
 
-
-def export_model(epoch=None):
+def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=True):
     # Save the trained model to an ONNX file
-    if epoch:
-        model_name = f"onnx/lat_accel_predictor-{epoch}.onnx"
-    else:
-        model_name = f"onnx/lat_accel_predictor.onnx"
-    print(f"Exporting model: {model_name}")
+    model_name = f"onnx/lat_accel_predictor-{prefix}-{epoch}.onnx"
+    if logging:
+        print(f"Exporting model: {model_name}")
 
-    # Adjust the dummy input size according to the model's expected input size (13 features)
-    dummy_input = torch.randn(1, WINDOW_SIZE, 13, requires_grad=True)
+    # Adjust the dummy input size according to the model's expected input size
+    dummy_input = torch.randn(1, window_size, 13, requires_grad=True)
 
     # Export the model
     torch.onnx.export(
@@ -123,21 +114,27 @@ def export_model(epoch=None):
     )
 
 
-
+EXPORT_INTERVAL = 999
 simulations_dir = "./simulations/"
 
 
-def start_training():
-    # Setup SummaryWriter for TensorBoard logging
-    writer = SummaryWriter()
+def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001, loss_fn=nn.MSELoss()):
+    model = PIDControllerNet(window_size=window_size)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    prefix = ''.join(random.choice(string.ascii_letters) for _ in range(5))
 
-    for epoch in range(EPOCHS):
+    # Setup SummaryWriter for TensorBoard logging
+    if logging:
+        writer = SummaryWriter()
+
+    total_loss = 0
+    for epoch in range(epochs):
         epoch_loss = 0
 
         # Loop through each file in the simulations directory
-        DATAFILES = tqdm(sorted(os.listdir(simulations_dir)))
+        DATAFILES = tqdm(sorted(os.listdir(simulations_dir)), disable=not logging)
         for filename in DATAFILES:
-            controller = Controller(epoch, window_size=WINDOW_SIZE)
+            run = TrainingRun(epoch, window_size=window_size, batch_size=batch_size, optimizer=optimizer, model=model, loss_fn=loss_fn)
 
             if filename.endswith('.pth'):
                 file_path = os.path.join(simulations_dir, filename)
@@ -152,24 +149,39 @@ def start_training():
                     input_tensor = row[0]
                     input_tensor.requires_grad_(True)
                     steer_torque = row[1]
-                    controller.train(input_tensor, steer_torque)
+                    run.train(input_tensor, steer_torque)
 
                 # Add loss
-                epoch_loss += controller.total_loss
+                epoch_loss += run.total_loss
+
+        # Track all epochs
+        total_loss += epoch_loss / len(DATAFILES)
 
         # Log to graph
-        writer.add_scalar('Average Loss', epoch_loss / len(DATAFILES), epoch)
-        print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(DATAFILES)}")
+        if logging:
+            writer.add_scalar('Average Loss', epoch_loss / len(DATAFILES), epoch)
+            print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(DATAFILES)}")
 
-        if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) > 15:
-            export_model(epoch + 1)
+        # Export model
+        if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) > 15 or (epoch + 1) == epochs:
+            export_model(epoch + 1, prefix, window_size, model, logging)
 
-    print('\nAnalyze Models...')
-    test_models.start_testing()
+    if logging:
+        print("\nTraining completed!")
+        writer.close()
 
-    print("\nTraining completed!")
-    writer.close()
+    if analyze:
+        if logging:
+            print('\nAnalyze Models...')
+        # Return simulation cost
+        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size)
+        return total_cost
+    else:
+        # Return average training loss
+        return total_loss / epochs
 
 if __name__ == "__main__":
-    start_training()
+    for i in range(10):
+        loss = start_training(epochs=i+1, analyze=True, logging=False)
+        print(loss)
 

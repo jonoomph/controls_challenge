@@ -12,26 +12,14 @@ SIM = None
 EPOCHS = 1
 DATAFILES_START = 0
 DATAFILES_LENGTH = 500
-MAX_TRAINING_ROWS = 600
-INCREMENT_TRAINING_ROWS_EVERY = 999
-INCREMENT_TRAINING_ROWS_BY = 20
-CONTEXT_LENGTH = 20
 model_path = Path('../../models/tinyphysics.onnx')
 
 
 class Controller:
     def __init__(self, epoch=0, internal_pid=None):
         self.epoch = epoch
-        self.total_loss = 0
         self.internal_pid = internal_pid
-        self.prev_state = None
         self.prev_actions = []
-        self.cumulative_reward = 0  # Added for accumulating reward over a batch
-        self.current_batch_states = []  # To store states over a batch
-        self.current_batch_actions = []  # To store actions (PID values) over a batch
-        self.stopped = False
-        self.started = False
-        self.pid_guess = None
         self.replay_buffer = []
 
     def store_transition(self, state, action):
@@ -46,11 +34,11 @@ class Controller:
         max_m_s = 40.0
         return v_ego_m_s / max_m_s
 
-    def update(self, target_lataccel, current_lataccel, state, future_plan):
+    def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global SIM
 
         # Compute the differences from the current state for each segment
-        future_segments = [(0, 8), (8, 16), (16, 24)]
+        future_segments = [(0, 2), (2, 6), (6, 12)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
@@ -73,14 +61,13 @@ class Controller:
         action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan)
 
         # Override initial steer commands
-        if self.internal_pid.step_idx < 100:
-            steer_command = SIM.data.get("steer_command")[self.internal_pid.step_idx]
-            action = steer_command
+        if not math.isnan(steer):
+            action = steer
+        else:
+            # Store transition in the replay buffer
+            self.store_transition(state_input, action)
 
-        # Store transition in the replay buffer
-        self.store_transition(state_input, action)
         self.prev_actions.append(action)
-
         return action
 
 
@@ -111,7 +98,7 @@ def get_random_files(folder_path, num_files=1, seed=1):
 
 
 def start_training():
-    global MAX_TRAINING_ROWS, SIM
+    global SIM
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
 
     # Get random files
@@ -125,7 +112,6 @@ def start_training():
             for controller_name, internal_controller in [("PIDReplay", replay.Controller(level_num=level_num))]:
                 # Create simulator
                 SIM = tinyphysics.TinyPhysicsSimulator(tinyphysicsmodel, str(data_path), controller=Controller(epoch, internal_controller), debug=False)
-                internal_controller.initial_steer = [steer for steer in SIM.data.get("steer_command") if not math.isnan(steer)]
 
                 # Iterate through data rows (where steering was active)
                 SIM.rollout()

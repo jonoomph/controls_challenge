@@ -1,6 +1,7 @@
 import onnxruntime as ort
 import numpy as np
 from . import BaseController
+import math
 
 
 class Controller(BaseController):
@@ -8,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=7, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-65.onnx"):
+    def __init__(self, window_size=7, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-ckozR-50.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -23,6 +24,8 @@ class Controller(BaseController):
         self.window_size = window_size
         self.input_window = []
         self.prev_actions = []
+        self.initial_steer_deltas = []
+        self.initial_steer_influence = 1.0
         self.step_idx = 20
 
     def average(self, values):
@@ -33,7 +36,15 @@ class Controller(BaseController):
         """ Normalize the vehicle's speed for model input. """
         return v_ego_m_s / 40.0
 
-    def update(self, target_lataccel, current_lataccel, state, future_plan):
+    def calculate_average_delta(self):
+        if not self.initial_steer_deltas:
+            return 0.0
+
+        total_delta = sum(self.initial_steer_deltas[-30:])
+        average_delta = total_delta / len(self.initial_steer_deltas[-30:])
+        return average_delta
+
+    def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         """
         Update the control signal based on the current state and future plan.
 
@@ -47,7 +58,7 @@ class Controller(BaseController):
             float: Control signal for steering.
         """
         # Calculate differences for future segments
-        future_segments = [(0, 8), (8, 16), (16, 24)]
+        future_segments = [(0, 2), (2, 6), (6, 12)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
@@ -66,9 +77,19 @@ class Controller(BaseController):
 
         # Run model if window is ready
         control_signal = 0
-        if len(self.input_window) >= self.window_size and self.step_idx >= 93:
+        if len(self.input_window) >= self.window_size: # and self.step_idx >= 93:
             input_tensor = np.array(self.input_window[-self.window_size:]).reshape(1, self.window_size, -1)
             control_signal = self.ort_session.run(None, {'input': input_tensor})[0][0, 0]
+
+        # Override initial steer values
+        if not math.isnan(steer):
+            if len(self.input_window) >= self.window_size:
+                self.initial_steer_deltas.append(steer - control_signal)
+            control_signal = steer
+        else:
+            # Adjust delta from initial steer values
+            steer_delta = self.calculate_average_delta()
+            control_signal += steer_delta
 
         # Save action and update step index
         self.prev_actions.append(control_signal)
