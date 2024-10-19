@@ -9,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=7, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-ckozR-50.onnx"):
+    def __init__(self, window_size=7, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-lcjLw-50.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -25,7 +25,6 @@ class Controller(BaseController):
         self.input_window = []
         self.prev_actions = []
         self.initial_steer_deltas = []
-        self.initial_steer_influence = 1.0
         self.step_idx = 20
 
     def average(self, values):
@@ -89,7 +88,7 @@ class Controller(BaseController):
         else:
             # Adjust delta from initial steer values
             steer_delta = self.calculate_average_delta()
-            control_signal += steer_delta
+            #control_signal += steer_delta
 
         # Save action and update step index
         self.prev_actions.append(control_signal)
