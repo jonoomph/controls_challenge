@@ -9,3 +9,4 @@ torch
 tensorboard
 onnx
 optuna
+scikit-learn

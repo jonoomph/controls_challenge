@@ -12,7 +12,7 @@ DATAFILES_START = 0
 MAX_TRAINING_ROWS = 600
 
 
-def start_testing(filter=None, logging=True, window_size=7, training_files=100):
+def start_testing(filter=None, logging=True, window_size=22, training_files=25):
     # Setup SummaryWriter for TensorBoard logging
     global MAX_TRAINING_ROWS
     tiny_model_path = Path('../../models/tinyphysics.onnx')

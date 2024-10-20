@@ -181,7 +181,6 @@ class Controller(BaseController):
         self.num_steps = 111
         self.torque_levels = np.linspace(self.min_torque, self.max_torque, self.num_steps)
         self.current_torque_index = self.num_steps // 2  # Start at zero torque
-        self.initial_steer = np.zeros(100)
 
         # Initialize font for displaying score
         self.font = pygame.font.Font(None, 36)
@@ -228,7 +227,7 @@ class Controller(BaseController):
         # Position the level text at the top-right of the screen
         screen.blit(level_text, (WIDTH - level_text.get_width() - 20, 20))
 
-    def update(self, target_lataccel, current_lataccel, state, future_plan):
+    def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global BASE_FPS
         pygame.event.pump()  # Necessary to process events
         pid_action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan)
@@ -298,8 +297,8 @@ class Controller(BaseController):
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
 
         # Use initial steer (if any)
-        if index + 20 < len(self.initial_steer):
-            torque_output = self.initial_steer[index + 20]
+        if not math.isnan(steer):
+            torque_output = steer
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - torque_output))
 
         # Get the torque output from the torque levels array
@@ -331,7 +330,7 @@ class Controller(BaseController):
 
 
 DEBUG = True
-LEVEL_NUM = 1545
+LEVEL_NUM = 322
 TINY_DATA_DIR = "../data"
 GAME_DATA_DIR = "data"
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
@@ -459,7 +458,6 @@ def main():
 
     sim_model = tinyphysics.TinyPhysicsModel(MODEL_PATH, debug=DEBUG)
     sim = tinyphysics.TinyPhysicsSimulator(sim_model, str(DATA_PATH), controller=controller, debug=DEBUG)
-    controller.initial_steer = [steer for steer in sim.data.get("steer_command") if not math.isnan(steer)]
     sim.step_idx = CONTEXT_LENGTH
     running = True
     won = False
