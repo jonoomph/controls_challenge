@@ -114,7 +114,7 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=
     )
 
 
-EXPORT_INTERVAL = 999
+EXPORT_INTERVAL = 5
 simulations_dir = "./simulations/"
 
 
@@ -174,14 +174,14 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
         if logging:
             print('\nAnalyze Models...')
         # Return simulation cost
-        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size)
+        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size, training_files=100)
         return total_cost
     else:
         # Return average training loss
         return total_loss / epochs
 
 if __name__ == "__main__":
-    for i in range(10):
-        loss = start_training(epochs=i+1, analyze=True, logging=False)
-        print(loss)
+    # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
+    loss = start_training(epochs=65, analyze=True, logging=True, window_size=22, batch_size=44, lr=8.640162515565103e-05)
+    print(loss)
 

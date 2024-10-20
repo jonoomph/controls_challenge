@@ -9,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=7, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-lcjLw-50.onnx"):
+    def __init__(self, window_size=22, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-BmdlW-50.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -24,7 +24,6 @@ class Controller(BaseController):
         self.window_size = window_size
         self.input_window = []
         self.prev_actions = []
-        self.initial_steer_deltas = []
         self.step_idx = 20
 
     def average(self, values):
@@ -34,14 +33,6 @@ class Controller(BaseController):
     def normalize_v_ego(self, v_ego_m_s):
         """ Normalize the vehicle's speed for model input. """
         return v_ego_m_s / 40.0
-
-    def calculate_average_delta(self):
-        if not self.initial_steer_deltas:
-            return 0.0
-
-        total_delta = sum(self.initial_steer_deltas[-30:])
-        average_delta = total_delta / len(self.initial_steer_deltas[-30:])
-        return average_delta
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         """
@@ -82,13 +73,7 @@ class Controller(BaseController):
 
         # Override initial steer values
         if not math.isnan(steer):
-            if len(self.input_window) >= self.window_size:
-                self.initial_steer_deltas.append(steer - control_signal)
             control_signal = steer
-        else:
-            # Adjust delta from initial steer values
-            steer_delta = self.calculate_average_delta()
-            #control_signal += steer_delta
 
         # Save action and update step index
         self.prev_actions.append(control_signal)

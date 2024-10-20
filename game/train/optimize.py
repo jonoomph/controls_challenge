@@ -10,22 +10,17 @@ def objective(trial):
     batch_size = trial.suggest_int('batch_size', 16, 128)
     window_size = trial.suggest_int('window_size', 3, 20)
 
-    # Define loss function (MSE in this case, could be something else)
-    loss_fn = nn.MSELoss()
-
     # Call your training function with the suggested hyperparameters
-    average_loss = start_training(
+    total_cost = start_training(
         epochs=50,
         window_size=window_size,
         logging=False,
         analyze=True,
         batch_size=batch_size,
         lr=lr,
-        loss_fn=loss_fn
+        loss_fn=nn.MSELoss()
     )
-
-    # Return the final average loss from the training function
-    return average_loss
+    return total_cost
 
 # Main code for running the Optuna study
 if __name__ == "__main__":

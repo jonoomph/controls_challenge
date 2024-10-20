@@ -9,11 +9,10 @@ from controllers.pid_model import Controller
 
 
 DATAFILES_START = 0
-DATAFILES_LENGTH = 20
 MAX_TRAINING_ROWS = 600
 
 
-def start_testing(filter=None, logging=True, window_size=7):
+def start_testing(filter=None, logging=True, window_size=7, training_files=100):
     # Setup SummaryWriter for TensorBoard logging
     global MAX_TRAINING_ROWS
     tiny_model_path = Path('../../models/tinyphysics.onnx')
@@ -26,7 +25,7 @@ def start_testing(filter=None, logging=True, window_size=7):
         if os.path.isdir(model_path) or (filter and filter not in model_name):
             continue
 
-        for file_index in range(DATAFILES_START, DATAFILES_START + DATAFILES_LENGTH):
+        for file_index in range(DATAFILES_START, DATAFILES_START + training_files):
             data_path = f'../../data/{file_index:05d}.csv'
 
             # Create simulator
@@ -48,7 +47,7 @@ def start_testing(filter=None, logging=True, window_size=7):
 
     # Print top 5 best-performing models
     if logging:
-        print(f"Top 5 Best Performing Models (Average Cost x {DATAFILES_LENGTH}):")
+        print(f"Top 5 Best Performing Models (Average Cost x {training_files}):")
         for i in range(len(average_costs)):
             model_name, avg_cost = average_costs[i]
             print(f"#{i+1} Model: {model_name}, Average Cost: {avg_cost:.4f}")
