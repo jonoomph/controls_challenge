@@ -11,6 +11,7 @@ import random
 import string
 import warnings
 warnings.filterwarnings("ignore", message=".*weights_only=False.*")
+warnings.filterwarnings("ignore", message=".*variable length with LSTM.*")
 
 
 class TrainingRun:
@@ -60,19 +61,6 @@ class TrainingRun:
 
         # Process only if we have enough data for one window
         if len(self.input_window) >= self.window_size:
-            # Stack the inputs to form a windowed tensor
-            window_tensor = torch.stack(self.input_window[-self.window_size:])
-
-            # Extract the lateral accel diff from segment 0 (closest to current)
-            avg_diff = torch.mean(torch.abs(window_tensor[:, 0, 0])).item()
-
-            # # Skip this window if the average difference exceeds the threshold
-            # if avg_diff > diff_threshold:
-            #     # Slide the window without processing
-            #     self.input_window.pop(0)
-            #     self.output_window.pop(0)
-            #     return
-
             # Stack the inputs to form a windowed tensor
             input_tensor = torch.stack(self.input_window[-self.window_size:]).unsqueeze(0).squeeze(2)
 
@@ -143,7 +131,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 tensor_data = torch.load(file_path)
 
                 # Get the subset of data
-                tensor_data_subset = tensor_data #[80:]
+                tensor_data_subset = tensor_data[80:]
 
                 for row in tensor_data_subset:
                     input_tensor = row[0]
@@ -173,8 +161,8 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
     if analyze:
         if logging:
             print('\nAnalyze Models...')
-        # Return simulation cost
-        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size, training_files=100)
+        # Return simulation cost: filter= f"{prefix}-{epochs}"
+        total_cost = test_models.start_testing("", logging=logging, window_size=window_size, training_files=20)
         return total_cost
     else:
         # Return average training loss
@@ -182,6 +170,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=65, analyze=True, logging=True, window_size=22, batch_size=44, lr=8.640162515565103e-05)
+    loss = start_training(epochs=50, analyze=True, logging=True, window_size=22, batch_size=44, lr=0.0001)
     print(loss)
 
