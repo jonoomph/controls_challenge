@@ -151,7 +151,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
             print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(DATAFILES)}")
 
         # Export model
-        if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) > 15 or (epoch + 1) == epochs:
+        if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) >= 15 or (epoch + 1) == epochs:
             export_model(epoch + 1, prefix, window_size, model, logging)
 
     if logging:
