@@ -106,10 +106,19 @@ EXPORT_INTERVAL = 5
 simulations_dir = "./simulations/"
 
 
-def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001, loss_fn=nn.MSELoss()):
+def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001, loss_fn=nn.MSELoss(), seed=2002):
+    prefix = ''.join(random.choice(string.ascii_letters) for _ in range(5))
+
+    # Set random seed
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)  # If using GPU
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    # Create model
     model = PIDControllerNet(window_size=window_size)
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    prefix = ''.join(random.choice(string.ascii_letters) for _ in range(5))
 
     # Setup SummaryWriter for TensorBoard logging
     if logging:
@@ -151,8 +160,10 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
             print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(DATAFILES)}")
 
         # Export model
-        if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) >= 15 or (epoch + 1) == epochs:
+        #if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) >= 15 or (epoch + 1) == epochs:
+        if epoch + 1 > 5:
             export_model(epoch + 1, prefix, window_size, model, logging)
+            test_models.start_testing(f"{prefix}-{epoch + 1}", logging=logging, window_size=window_size, training_files=20)
 
     if logging:
         print("\nTraining completed!")
@@ -162,7 +173,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
         if logging:
             print('\nAnalyze Models...')
         # Return simulation cost: filter= f"{prefix}-{epochs}"
-        total_cost = test_models.start_testing("", logging=logging, window_size=window_size, training_files=20)
+        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size, training_files=20)
         return total_cost
     else:
         # Return average training loss
@@ -170,6 +181,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=50, analyze=True, logging=True, window_size=22, batch_size=44, lr=0.0001)
+    loss = start_training(epochs=30, analyze=True, logging=True, window_size=22, batch_size=44, lr=0.00006, seed=962)
     print(loss)
 

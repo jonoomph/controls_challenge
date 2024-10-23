@@ -1,0 +1,101 @@
+    PREVIOUS GAME LEVELS (including 80 initial steers)
+    45: test	0.996	14.617	64.393
+    50: test	0.987	14.686	64.018
+    
+    UPDATED GAME LEVELS: 00001.npy - 00006.npy:
+    50: test	1.021	14.587	65.616
+    
+    UPDATED GAME LEVELS: 00120 - 00122:
+    35: test    1.096	14.406	69.182
+    
+    UPDATED GAME LEVELS: 00123, 00124, 00159, 00254:
+    35: test	1.096	14.406	69.182
+    
+    UPDATED GAME LEVELS: 00322, 00356, 00432:  *** EXPLODES MODEL
+    35: test	12.312	16.892	632.476
+    
+    UPDATED GAME LEVELS: Reverting 00432:
+    50: test	1.191	15.099	74.656
+    
+    UPDATED GAME LEVELS: Deleting 00432:
+    35: test	1.525	14.532	90.791
+    
+    13 NEW GAME LEVELS: (equal distribution)
+    30: test	1.317	13.932	79.772
+    
+    15 NEW GAME LEVELS: (equal distribution) 
+    30: test	1.180	14.704	73.711 - ignore initial steer [80:]
+    35: test	1.168	14.356	72.776 - with 80 initial steer
+
+    27 NEW GAME LEVELS: (equal distribution) 
+    20: test	1.235	14.621	76.391 - ignore initial steer [80:]
+    45: test	1.144	15.202	72.409 - with 80 initial steer
+
+    35 NEW GAME LEVELS: (equal distribution) 
+    25: test	1.136	14.812	71.619 - ignore initial steer [80:]
+    45: test	1.218	14.391	75.297 - with 80 initial steer
+    
+    39 NEW GAME LEVELS: (equal distribution) + 1 PID level
+    20: test	1.059	14.936	67.875
+    
+    41 NEW GAME LEVELS: (equal distribution) + Many PID level
+    45: test	1.144	14.474	71.688
+    40: test    1.116	14.393	70.216 (no changes - just train again)
+    
+    CHANGE NN from 64 to 80 (no changes in data)
+    40: test	1.019	14.771	65.712
+    
+    53 NEW GAME LEVELS: 
+    20: test	1.088	14.478	68.882
+    
+    58 NEW GAME LEVELS: (deleted 4744, 900+ score)
+    30: test	0.945	15.242	62.485
+    40: test	0.928	15.453	61.843
+    40: test	1.125	16.390	72.652 (5000 eval)
+    
+    CHANGE NN from 80 to 128 (includes 4744)
+    25: test	0.977	15.707	64.548
+    
+    CHANGE NN to 96 (deleted 4744)
+    20: test	1.028	15.082	66.482
+    
+    CHANGE NN back to 80 (set random seed: 42), still 58 game levels
+    15: test	1.367	15.115	83.454
+    20: test	1.560	15.529	93.540
+    25: test	1.227	15.676	77.039
+    30: test	1.396	15.966	85.776
+    35: test	1.681	16.217	100.249
+    
+    NO CHANGES (set random seed: 1979)
+    25: test	1.267	15.420	78.775
+    30: test	1.207	15.981	76.311
+
+    NO CHANGES (set random seed: 2000)
+    25: test	1.248	15.336	77.750
+    50: test	1.198	15.828	75.706
+
+    NO CHANGES (set random seed: 2002, changed LR=0.00006)
+    26: test	1.000	14.941	64.925
+
+    NO CHANGES (set random seed: 962, changed LR=0.00006)
+    25: test	0.992	14.764	64.375
+
+    REMOVED LEVELS: 04743, 08335, 03166 (bad high scores)
+    30: test	1.081	14.498	68.549  # slower to train
+
+    ADDED LEVELS (1,2,3, 120, 121, 122) = got worse
+    20: test	1.001	14.612	64.677
+
+    REVERTED BACK TO 58 LEVELS (tensor_data[60:]) = got worse
+    24: test	1.001	14.715	64.781
+
+    UPDATE MODEL TO 64 NN (tensor_data[80:]) = got worse
+    24: test	1.060	14.515	67.525
+
+    UPDATE MODEL TO 80 NN
+    25: test	0.992	14.764	64.375
+
+    UPDATED GAME LEVELS to 63
+    21: test	0.997	14.486	64.346
+
+

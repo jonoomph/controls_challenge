@@ -5,7 +5,7 @@ import math
 from draw_game import *
 
 DEBUG = True
-LEVEL_IDX = 42
+LEVEL_IDX = 59
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 
