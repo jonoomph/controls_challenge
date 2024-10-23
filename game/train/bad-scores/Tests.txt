@@ -98,4 +98,26 @@
     UPDATED GAME LEVELS to 63
     21: test	0.997	14.486	64.346
 
+    UPDATED GAME LEVELS to 82 (removing 14278, 14400, 12758) = got worse  (more bad files: 08335, 04743, 03166)
+    18: test	1.220	14.029	75.007
 
+    TRAINING all 84 levels (analyzing which files are the worst over 20 epochs) - 10 worst files
+    File                 Mean Loss       Epoch Count
+    ---------------------------------------------
+    1   ./simulations/03166.pth 0.743433        20
+    2   ./simulations/04743.pth 0.458917        20
+    3   ./simulations/14278.pth 0.442126        20
+    4   ./simulations/00140.pth 0.265490        20
+    5   ./simulations/01611.pth 0.263488        20
+    6   ./simulations/02355.pth 0.244197        20
+    7   ./simulations/07283.pth 0.217067        20
+    8   ./simulations/14400.pth 0.216369        20
+    9   ./simulations/00437.pth 0.199559        20
+    10  ./simulations/08335.pth 0.183868        20
+    11  ./simulations/04358.pth 0.167655        20
+
+    REMOVED top 11 worst training files (73 levels remain)
+    33: test	1.425	14.962	86.223
+
+    SWITCHED loss function to SmoothL1Loss()
+    33: test	1.440	14.912	86.916

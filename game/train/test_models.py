@@ -47,7 +47,6 @@ def start_testing(filter=None, logging=True, window_size=22, training_files=25):
 
     # Print top 5 best-performing models
     if logging:
-        print(f"Top 5 Best Performing Models (Average Cost x {training_files}):")
         for i in range(len(average_costs)):
             model_name, avg_cost = average_costs[i]
             print(f"#{i+1} Model: {model_name}, Average Cost: {avg_cost:.4f}")

@@ -12,6 +12,7 @@ import string
 import warnings
 warnings.filterwarnings("ignore", message=".*weights_only=False.*")
 warnings.filterwarnings("ignore", message=".*variable length with LSTM.*")
+import collections
 
 
 class TrainingRun:
@@ -120,6 +121,29 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
     model = PIDControllerNet(window_size=window_size)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
+    # Initialize a dict to track loss per file across epochs
+    file_loss_dict = collections.defaultdict(list)
+
+    def update_file_loss(file_name, file_loss):
+        # Add the current epoch's loss for the file to the dict
+        file_loss_dict[file_name].append(file_loss)
+
+    def analyze_worst_files(top_n=20):
+        # Calculate the mean loss per file across all epochs
+        mean_losses = {file: sum(losses) / len(losses) for file, losses in file_loss_dict.items()}
+
+        # Sort files by their mean loss in descending order
+        sorted_files = sorted(mean_losses.items(), key=lambda x: x[1], reverse=True)
+
+        # Print the top worst files
+        print(f"{'File':<20} {'Mean Loss':<15} {'Epoch Count':<10}")
+        print("-" * 45)
+
+        for i, (file, mean_loss) in enumerate(sorted_files[:top_n], 1):
+            epoch_count = len(file_loss_dict[file])
+            print(f"{i:<3} {file:<20} {mean_loss:<15.6f} {epoch_count:<10}")
+        print("\nEnd of Top Worst Files Report")
+
     # Setup SummaryWriter for TensorBoard logging
     if logging:
         writer = SummaryWriter()
@@ -151,19 +175,21 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 # Add loss
                 epoch_loss += run.total_loss
 
+                # Track loss per file
+                update_file_loss(file_path, run.total_loss)
+
         # Track all epochs
         total_loss += epoch_loss / len(DATAFILES)
 
+        # Export model
+        export_model(epoch + 1, prefix, window_size, model, logging)
+
         # Log to graph
         if logging:
-            writer.add_scalar('Average Loss', epoch_loss / len(DATAFILES), epoch)
+            writer.add_scalar('Metrics/Training Loss', epoch_loss / len(DATAFILES), epoch)
             print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(DATAFILES)}")
-
-        # Export model
-        #if (epoch + 1) % EXPORT_INTERVAL == 0 and (epoch + 1) >= 15 or (epoch + 1) == epochs:
-        if epoch + 1 > 5:
-            export_model(epoch + 1, prefix, window_size, model, logging)
-            test_models.start_testing(f"{prefix}-{epoch + 1}", logging=logging, window_size=window_size, training_files=20)
+            cost = test_models.start_testing(f"{prefix}-{epoch + 1}", logging=logging, window_size=window_size, training_files=20)
+            writer.add_scalar('Metrics/Validation Cost', cost, epoch)
 
     if logging:
         print("\nTraining completed!")
@@ -172,6 +198,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
     if analyze:
         if logging:
             print('\nAnalyze Models...')
+            analyze_worst_files()
         # Return simulation cost: filter= f"{prefix}-{epochs}"
         total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size, training_files=20)
         return total_cost
@@ -181,6 +208,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=30, analyze=True, logging=True, window_size=22, batch_size=44, lr=0.00006, seed=962)
+    loss = start_training(epochs=65, analyze=True, logging=True, window_size=22, batch_size=44, lr=0.00006, seed=962)
     print(loss)
 

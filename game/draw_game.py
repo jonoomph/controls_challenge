@@ -16,8 +16,8 @@ LEVELS_FILE = os.path.join(GAME_DATA_DIR, "levels.json")
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
 
 # Assuming there is only one joystick (your PS5 controller)
-# joystick = pygame.joystick.Joystick(0)
-# joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
 
 # Set up the screen dimensions and colors
 WIDTH, HEIGHT = 600, 1200  # Tall window size

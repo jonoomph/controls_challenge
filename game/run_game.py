@@ -49,7 +49,8 @@ class Controller(BaseController):
         replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan)
 
         # Get raw joystick input [-1, 1]
-        #raw_input = -joystick.get_axis(0)
+        raw_input = -joystick.get_axis(0)
+
         # Apply non-linear mapping
         #exponent = 3  # Adjust this value to change the curve
         #torque_output = pid_action + self.non_linear_mapping(raw_input, exponent) * 1.5
