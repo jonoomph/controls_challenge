@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import numpy as np
+from g29py import g29
 
 # Initialize PyGame and the PS5 controller
 pygame.init()
@@ -18,6 +19,24 @@ SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
 # Assuming there is only one joystick (your PS5 controller)
 joystick = pygame.joystick.Joystick(0)
 joystick.init()
+
+wheel = g29.G29()
+#wheel.listen()
+#wheel.set_autocenter(strength=0.15, rate=0.15)
+wheel.autocenter_off()
+wheel.set_range(900)
+wheel.set_friction(0.1)
+
+# Auto-Center Wheel
+# while abs(joystick.get_axis(0)) > 0.005:
+#     pygame.event.pump()
+#     print(joystick.get_axis(0))
+#     if joystick.get_axis(0) > 0:
+#         wheel.force_constant(0.65)
+#     else:
+#         wheel.force_constant(0.35)
+# wheel.force_constant(0.5)
+
 
 # Set up the screen dimensions and colors
 WIDTH, HEIGHT = 600, 1200  # Tall window size

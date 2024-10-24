@@ -5,7 +5,7 @@ import math
 from draw_game import *
 
 DEBUG = True
-LEVEL_IDX = 59
+LEVEL_IDX = 5
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 
@@ -25,9 +25,9 @@ class Controller(BaseController):
         self.increment = 1
         self.ctrl_increment = 2
         self.ctrl_pressed = False
-        self.min_torque = -2.0
-        self.max_torque = 2.0
-        self.num_steps = 141
+        self.min_torque = -2.5
+        self.max_torque = 2.5
+        self.num_steps = 256
         self.torque_levels = np.linspace(self.min_torque, self.max_torque, self.num_steps)
         self.current_torque_index = self.num_steps // 2  # Start at zero torque
 
@@ -36,6 +36,9 @@ class Controller(BaseController):
         self.lat_accel_cost = score['lataccel_cost']
         self.jerk_cost = score['jerk_cost']
         self.total_cost = score['total_cost']
+
+    def map_value_to_range(self, value, in_min, in_max, out_min, out_max):
+        return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global BASE_FPS
@@ -47,13 +50,6 @@ class Controller(BaseController):
             future_lataccel = future_plan.lataccel[4] # Use future target lataccel (if available)
         pid_action = self.internal_pid.update(future_lataccel, current_lataccel, state, future_plan)
         replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan)
-
-        # Get raw joystick input [-1, 1]
-        raw_input = -joystick.get_axis(0)
-
-        # Apply non-linear mapping
-        #exponent = 3  # Adjust this value to change the curve
-        #torque_output = pid_action + self.non_linear_mapping(raw_input, exponent) * 1.5
 
         # Determine position on road and SIM index
         index = len(self.torques)
@@ -108,6 +104,12 @@ class Controller(BaseController):
         elif keys[pygame.K_RIGHT]:
             # Increase torque index (turn right)
             self.current_torque_index = min(max(self.current_torque_index - self.increment, 0), self.num_steps - 1)
+        else:
+            # Get raw joystick input [-1, 1]
+            raw_input = -joystick.get_axis(0)
+            scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
+            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - scaled_input))
+            print(scaled_input)
 
         # Use replay data (if key pressed)
         if keys[pygame.K_SPACE]:
@@ -120,6 +122,28 @@ class Controller(BaseController):
         if not math.isnan(steer):
             self.internal_pid.correct(steer)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - steer))
+
+            auto_steer_torque = self.torque_levels[self.current_torque_index]
+            aut0_steer_diff = joystick.get_axis(0) - auto_steer_torque
+            print(f"diff: {aut0_steer_diff}")
+            # if joystick.get_axis(0) - auto_steer_torque > 0:
+            #     wheel.force_constant(0.6)
+            # else:
+            #     wheel.force_constant(0.4)
+
+            while True:
+                pygame.event.pump()
+                raw_input = -joystick.get_axis(0)
+                scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
+                auto_steer_diff = scaled_input - auto_steer_torque
+                print(auto_steer_diff)
+                if abs(auto_steer_diff) <= 0.01:
+                    break
+                if auto_steer_diff > 0:
+                    wheel.force_constant(0.4)
+                else:
+                    wheel.force_constant(0.6)
+            wheel.force_constant(0.5)
 
         # Get the torque output from the torque levels array
         if not torque_output:

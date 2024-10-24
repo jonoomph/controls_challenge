@@ -121,3 +121,6 @@
 
     SWITCHED loss function to SmoothL1Loss()
     33: test	1.440	14.912	86.916
+
+    REVERTED. GOT G29 WHEEL. FIRST 7 WHEEL LEVELS (no PID)
+    65: test	1.296	14.917	79.711  # still improving (worst files are high scores)
