@@ -6,6 +6,7 @@ from draw_game import *
 
 DEBUG = True
 LEVEL_IDX = 5
+CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 
@@ -40,8 +41,23 @@ class Controller(BaseController):
     def map_value_to_range(self, value, in_min, in_max, out_min, out_max):
         return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+    def turn_wheel(self, torque_target):
+        if pygame.joystick.get_count() > 0:
+            while True:
+                pygame.event.pump()
+                raw_input = -joystick.get_axis(0)
+                scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
+                auto_steer_diff = scaled_input - torque_target
+                if abs(auto_steer_diff) <= 0.01:
+                    break
+                if auto_steer_diff > 0:
+                    wheel.force_constant(0.4)
+                else:
+                    wheel.force_constant(0.6)
+            wheel.force_constant(0.5)
+
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
-        global BASE_FPS
+        global BASE_FPS, CHECKPOINT
         pygame.event.pump()
 
         # Update internal controllers
@@ -56,6 +72,10 @@ class Controller(BaseController):
 
         # # Get the state of all keyboard buttons
         keys = pygame.key.get_pressed()
+
+        # Checkpoint press
+        if keys[pygame.K_x] and index > 80:
+            CHECKPOINT = index
 
         if keys[pygame.K_UP]:
             BASE_FPS += 2
@@ -94,7 +114,6 @@ class Controller(BaseController):
 
         if keys[pygame.K_LSHIFT]:
             FPS *= 2
-        clock.tick(FPS)
 
         # Adjust torque index based on key presses
         torque_output = None
@@ -112,9 +131,13 @@ class Controller(BaseController):
                 self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - scaled_input))
 
         # Use replay data (if key pressed)
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE] or (CHECKPOINT and index < CHECKPOINT):
             self.internal_pid.correct(replay_torque)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
+
+            # move wheel to correct position (pause game if needed)
+            self.turn_wheel(self.torque_levels[self.current_torque_index])
+
         if keys[pygame.K_c]:
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - pid_action))
 
@@ -122,22 +145,9 @@ class Controller(BaseController):
         if not math.isnan(steer):
             self.internal_pid.correct(steer)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - steer))
-            auto_steer_torque = self.torque_levels[self.current_torque_index]
 
             # move wheel to correct position (pause game if needed)
-            if pygame.joystick.get_count() > 0:
-                while True:
-                    pygame.event.pump()
-                    raw_input = -joystick.get_axis(0)
-                    scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
-                    auto_steer_diff = scaled_input - auto_steer_torque
-                    if abs(auto_steer_diff) <= 0.01:
-                        break
-                    if auto_steer_diff > 0:
-                        wheel.force_constant(0.4)
-                    else:
-                        wheel.force_constant(0.6)
-                wheel.force_constant(0.5)
+            self.turn_wheel(self.torque_levels[self.current_torque_index])
 
         # Get the torque output from the torque levels array
         if not torque_output:
@@ -157,9 +167,17 @@ class Controller(BaseController):
             draw_mode("REPLAY")
         if keys[pygame.K_c]:
             draw_mode("PID")
+        if CHECKPOINT and index < CHECKPOINT:
+            draw_mode(f"CHECKPOINT {CHECKPOINT-index}")
+            FPS *= 4
+        elif CHECKPOINT:
+            draw_mode(f"CHECKPOINT")
 
         # Update display
         pygame.display.flip()
+
+        # pause game
+        clock.tick(FPS)
 
         # Return torque value to simulator (not used in drawing)
         self.torques.append(torque_output)
@@ -183,8 +201,9 @@ def main():
 
     def next_level_callback():
         nonlocal running
-        global LEVEL_IDX, DATA_PATH
+        global LEVEL_IDX, DATA_PATH, CHECKPOINT
         running = False
+        CHECKPOINT = 0
         LEVEL_IDX += 1  # Increment to next level
         LEVEL_NUM = LEVELS[LEVEL_IDX]
         DATA_PATH = os.path.join(TINY_DATA_DIR, f"{LEVEL_NUM:05}.csv")

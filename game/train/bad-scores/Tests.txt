@@ -127,3 +127,20 @@
 
     IMPROVED 7 LEVELS (WHEEL ONLY) - Trained longer, 100 epochs
     83: test	1.186	15.063	74.386
+
+    10 LEVELS (WHEEL ONLY)
+    85: test	1.200	14.417	74.416
+
+File                 Mean Loss       Epoch Count
+---------------------------------------------
+1   ./simulations/00140.pth 0.189727        100
+2   ./simulations/00437.pth 0.150982        100
+3   ./simulations/00367.pth 0.060024        100
+4   ./simulations/00669.pth 0.057937        100
+5   ./simulations/00236.pth 0.044078        100
+6   ./simulations/00511.pth 0.027378        100
+7   ./simulations/00009.pth 0.021586        100
+8   ./simulations/00490.pth 0.014309        100
+9   ./simulations/00494.pth 0.011044        100
+10  ./simulations/00887.pth 0.010204        100
+11  ./simulations/00244.pth 0.003785        100

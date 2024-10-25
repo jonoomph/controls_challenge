@@ -27,7 +27,7 @@ if pygame.joystick.get_count() > 0:
     wheel.set_friction(0.1)
 
 # Set up the screen dimensions and colors
-WIDTH, HEIGHT = 1280, 1080  # Tall window size
+WIDTH, HEIGHT = 1600, 1080  # Tall window size
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -163,11 +163,6 @@ def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_latacc
         scaled_road = pygame.transform.scale(get_road_segment_image(i + index), (scaled_road_width, scaled_road_height))
         screen.blit(scaled_road, (road_x, segment_y))
 
-        # Debug print
-        print(f"Segment {i}: Scale: {scale_factor:.2f}, Width: {scaled_road_width}, Height: {scaled_road_height}, X: {road_x}, Y: {segment_y}")
-
-    print("--- END DEBUG INFO ---\n")  # End of debug information
-
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
     rotation_angle = -torque_value * 90  # Each torque unit corresponds to 180 degrees (since 2*180=360)
@@ -233,12 +228,12 @@ def draw_arrow(road_x, road_y, road_roll):
         pygame.draw.polygon(screen, WHITE, triangle_points)
 
 
-def draw_score(lat_accel_cost, jerk_cost, total_cost, FPS):
+def draw_score(lat_accel_cost, jerk_cost, total_cost, fps):
     # Create the text surfaces
     lat_text = font.render(f"Lat: {lat_accel_cost:.2f}", True, WHITE)
     jerk_text = font.render(f"Jerk: {jerk_cost:.2f}", True, WHITE)
     total_text = font.render(f"Total: {total_cost:.2f}", True, WHITE)
-    fps_text = font.render(f"FPS: {FPS}", True, WHITE)
+    fps_text = font.render(f"FPS: {fps}", True, WHITE)
 
     # Position the text at the top of the screen
     screen.blit(lat_text, (20, 20))
