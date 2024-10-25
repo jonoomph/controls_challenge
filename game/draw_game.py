@@ -17,29 +17,17 @@ LEVELS_FILE = os.path.join(GAME_DATA_DIR, "levels.json")
 SCORES_FILE = os.path.join(GAME_DATA_DIR, "high_scores.json")
 
 # Assuming there is only one joystick (your PS5 controller)
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
+if pygame.joystick.get_count() > 0:
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
 
-wheel = g29.G29()
-#wheel.listen()
-#wheel.set_autocenter(strength=0.15, rate=0.15)
-wheel.autocenter_off()
-wheel.set_range(900)
-wheel.set_friction(0.1)
-
-# Auto-Center Wheel
-# while abs(joystick.get_axis(0)) > 0.005:
-#     pygame.event.pump()
-#     print(joystick.get_axis(0))
-#     if joystick.get_axis(0) > 0:
-#         wheel.force_constant(0.65)
-#     else:
-#         wheel.force_constant(0.35)
-# wheel.force_constant(0.5)
-
+    wheel = g29.G29()
+    wheel.autocenter_off()
+    wheel.set_range(900)
+    wheel.set_friction(0.1)
 
 # Set up the screen dimensions and colors
-WIDTH, HEIGHT = 600, 1200  # Tall window size
+WIDTH, HEIGHT = 1280, 1080  # Tall window size
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -52,74 +40,133 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Car Simulation")
 
 # Car constants
-CAR_WIDTH, CAR_HEIGHT = 15, 25  # Car size adjusted to match car image
-ROAD_WIDTH = 600  # Road width matches the road image width
-SEGMENT_HEIGHT = 25  # Matches the height of the road image
-MAX_LATACCEL_DIFF = 5  # Maximum expected absolute value of lateral acceleration difference
-ROAD_AGGRESSIVE_FACTOR = 160  # Adjust this value as needed for road shift sensitivity
+CAR_WIDTH, CAR_HEIGHT = 30, 50
+ROAD_WIDTH = 1280
+SEGMENT_HEIGHT = 40
+MAX_LATACCEL_DIFF = 5
+ROAD_AGGRESSIVE_FACTOR = 160
 
 # Load images
 background_image = pygame.image.load("images/background.png").convert()
-car_image = pygame.image.load("images/car.png").convert_alpha()
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
+
+car_red_image = pygame.image.load("images/car-red.png").convert_alpha()
+car_red_image = pygame.transform.scale(car_red_image, (CAR_WIDTH, CAR_HEIGHT))
+car_orange_image = pygame.image.load("images/car-orange.png").convert_alpha()
+car_orange_image = pygame.transform.scale(car_orange_image, (CAR_WIDTH, CAR_HEIGHT))
+car_green_image = pygame.image.load("images/car-green.png").convert_alpha()
+car_green_image = pygame.transform.scale(car_green_image, (CAR_WIDTH, CAR_HEIGHT))
+
 road1_image = pygame.image.load("images/road.png").convert_alpha()
+road1_image = pygame.transform.scale(road1_image, (ROAD_WIDTH, SEGMENT_HEIGHT))
 road2_image = pygame.image.load("images/road-1.png").convert_alpha()
+road2_image = pygame.transform.scale(road2_image, (ROAD_WIDTH, SEGMENT_HEIGHT))
 road3_image = pygame.image.load("images/road-2.png").convert_alpha()
+road3_image = pygame.transform.scale(road3_image, (ROAD_WIDTH, SEGMENT_HEIGHT))
 road4_image = pygame.image.load("images/road-3.png").convert_alpha()
+road4_image = pygame.transform.scale(road4_image, (ROAD_WIDTH, SEGMENT_HEIGHT))
 road_checker_image = pygame.image.load("images/road-checker.png").convert_alpha()
+road_checker_image = pygame.transform.scale(road_checker_image, (ROAD_WIDTH, SEGMENT_HEIGHT))
+
 wheel_image = pygame.image.load("images/wheel.png").convert_alpha()
+
+blank_image = pygame.Surface((1, 1))
+blank_image.fill((0, 0, 0))
+blank_image.set_colorkey((0, 0, 0))
 
 # Initialize font for displaying score
 font = pygame.font.Font(None, 36)
 level_font = pygame.font.Font(None, 50)
 
+# Function to draw a green cross above the car with a specified height
+def draw_cross_above_car(car_x, car_y, height_above_car, color):
+    cross_size = 25  # The length of each arm of the cross
+    cross_thickness = 4  # The thickness of the cross lines
+
+    # Coordinates for the vertical line of the cross (height_above_car pixels above the car)
+    vertical_start = (car_x, car_y - height_above_car - cross_size // 2)
+    vertical_end = (car_x, car_y - height_above_car + cross_size // 2)
+
+    # Coordinates for the horizontal line of the cross
+    horizontal_start = (car_x - cross_size // 2, car_y - height_above_car)
+    horizontal_end = (car_x + cross_size // 2, car_y - height_above_car)
+
+    # Draw the vertical line of the cross
+    pygame.draw.line(screen, color, vertical_start, vertical_end, cross_thickness)
+
+    # Draw the horizontal line of the cross
+    pygame.draw.line(screen, color, horizontal_start, horizontal_end, cross_thickness)
+
 # Function to draw the car
-def draw_car(car_x, car_y, rotation_angle):
-    rotated_car = pygame.transform.rotate(car_image, rotation_angle)
-    screen.blit(rotated_car, rotated_car.get_rect(center=(car_x, car_y)))
+def draw_car(car_x, car_y, rotation_angle, distance_from_target):
+    # Call the function to draw the cross 20 pixels above the car
+    if abs(distance_from_target) < 0.1:
+        car_image = car_green_image
+    elif abs(distance_from_target) < 0.3:
+        car_image = car_orange_image
+    else:
+        car_image = car_red_image
+    screen.blit(car_image, car_image.get_rect(center=(car_x, car_y)))
+    #draw_cross_above_car(car_x, car_y, 0, color)
 
 def get_road_segment_image(index):
+    if index in [80, 577]:
+        return road_checker_image
     if index < 144:
         return road1_image
     elif index < 288:
         return road2_image
     elif index < 433:
         return road3_image
-    else:
+    elif index < 577:
         return road4_image
+    else:
+        return blank_image
 
 def draw_background():
     screen.blit(background_image, (0, 0))
 
 def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_lataccel, index):
-    lataccel_diff = current_lataccel - target_lataccel
-    road_center_x = (WIDTH // 2) + (lataccel_diff * ROAD_AGGRESSIVE_FACTOR)
+    # Start by drawing the furthest segment first
+    num_segments = 41  # Number of segments to draw
+    min_scale = 0.3  # Minimum scale for the furthest segment
+    max_scale = 1.0  # Maximum scale for the closest segment
 
-    # Draw the road directly under the car
-    road_x = road_center_x - (ROAD_WIDTH // 2)
-    current_segment_y = car_y
-    screen.blit(get_road_segment_image(index), (road_x, current_segment_y))
+    # Create a list of lateral accelerations (reversed future segments + current segment)
+    lataccels = [target_lataccel] + list(future_plan.lataccel[:num_segments])
+    if len(lataccels) < num_segments:
+        padding_needed = num_segments - len(lataccels)
+        lataccels.extend([0.0] * padding_needed)
 
-    # Draw future segments with road roll arrows
-    for i, fut_lataccel in enumerate(future_plan.lataccel):
-        lataccel_diff = current_lataccel - fut_lataccel
+    total_height = 0  # Track total height to correctly position Y-axis
+
+    # Iterate through the lateral accelerations list
+    for i in reversed(range(num_segments)):
+        lataccel_diff = current_lataccel - lataccels[i]
+
+        # Calculate the correct scale factor: smallest for furthest, largest for closest
+        scale_factor = min_scale + (max_scale - min_scale) * ((num_segments - 1 - i) / (num_segments - 1))
+
+        # Calculate the width and height of the current segment
+        scaled_road_width = int(ROAD_WIDTH * scale_factor)
+        scaled_road_height = int(SEGMENT_HEIGHT * scale_factor)
+
+        # Calculate the vertical position of the segment
+        segment_y = total_height  # Start from the top of the screen (0) and increment downwards
+        total_height += scaled_road_height  # Accumulate height downwards to fill the screen
+
+        # Calculate the horizontal center of the road segment based on lateral acceleration
         road_center_x = (WIDTH // 2) + (lataccel_diff * ROAD_AGGRESSIVE_FACTOR)
-        segment_y = car_y - (i + 1) * SEGMENT_HEIGHT  # Future road segments
+        road_x = road_center_x - (scaled_road_width // 2)
 
-        road_x = road_center_x - (ROAD_WIDTH // 2)
-        if index + i in [80, 577]:
-            screen.blit(road_checker_image, (road_x, segment_y))
-        else:
-            screen.blit(get_road_segment_image(i + index), (road_x, segment_y))
+        # Scale and draw the road segment
+        scaled_road = pygame.transform.scale(get_road_segment_image(i + index), (scaled_road_width, scaled_road_height))
+        screen.blit(scaled_road, (road_x, segment_y))
 
-        # Calculate delta between future road rolls and draw arrow if necessary
-        if i == 0:
-            prev_road_roll = roll_lataccel
-        else:
-            prev_road_roll = future_plan.roll_lataccel[i - 1]
-        future_road_roll = future_plan.roll_lataccel[i]
-        roll_delta = future_road_roll - prev_road_roll
-        draw_arrow(road_x, segment_y, roll_delta)
+        # Debug print
+        print(f"Segment {i}: Scale: {scale_factor:.2f}, Width: {scaled_road_width}, Height: {scaled_road_height}, X: {road_x}, Y: {segment_y}")
 
+    print("--- END DEBUG INFO ---\n")  # End of debug information
 
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)

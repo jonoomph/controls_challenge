@@ -106,10 +106,10 @@ class Controller(BaseController):
             self.current_torque_index = min(max(self.current_torque_index - self.increment, 0), self.num_steps - 1)
         else:
             # Get raw joystick input [-1, 1]
-            raw_input = -joystick.get_axis(0)
-            scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
-            self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - scaled_input))
-            print(scaled_input)
+            if pygame.joystick.get_count() > 0:
+                raw_input = -joystick.get_axis(0)
+                scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
+                self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - scaled_input))
 
         # Use replay data (if key pressed)
         if keys[pygame.K_SPACE]:
@@ -122,28 +122,22 @@ class Controller(BaseController):
         if not math.isnan(steer):
             self.internal_pid.correct(steer)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - steer))
-
             auto_steer_torque = self.torque_levels[self.current_torque_index]
-            aut0_steer_diff = joystick.get_axis(0) - auto_steer_torque
-            print(f"diff: {aut0_steer_diff}")
-            # if joystick.get_axis(0) - auto_steer_torque > 0:
-            #     wheel.force_constant(0.6)
-            # else:
-            #     wheel.force_constant(0.4)
 
-            while True:
-                pygame.event.pump()
-                raw_input = -joystick.get_axis(0)
-                scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
-                auto_steer_diff = scaled_input - auto_steer_torque
-                print(auto_steer_diff)
-                if abs(auto_steer_diff) <= 0.01:
-                    break
-                if auto_steer_diff > 0:
-                    wheel.force_constant(0.4)
-                else:
-                    wheel.force_constant(0.6)
-            wheel.force_constant(0.5)
+            # move wheel to correct position (pause game if needed)
+            if pygame.joystick.get_count() > 0:
+                while True:
+                    pygame.event.pump()
+                    raw_input = -joystick.get_axis(0)
+                    scaled_input = self.map_value_to_range(raw_input, -1, 1, -2.5, 2.5)
+                    auto_steer_diff = scaled_input - auto_steer_torque
+                    if abs(auto_steer_diff) <= 0.01:
+                        break
+                    if auto_steer_diff > 0:
+                        wheel.force_constant(0.4)
+                    else:
+                        wheel.force_constant(0.6)
+                wheel.force_constant(0.5)
 
         # Get the torque output from the torque levels array
         if not torque_output:
@@ -155,7 +149,7 @@ class Controller(BaseController):
         # Draw the game elements
         draw_background()
         draw_road(future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
-        draw_car(WIDTH // 2, HEIGHT - 100, car_rotation)
+        draw_car(WIDTH // 2, HEIGHT - 50, car_rotation, target_lataccel - current_lataccel)
         draw_steering(torque_output, self.ctrl_increment, self.ctrl_pressed)
         draw_score(self.lat_accel_cost, self.jerk_cost, self.total_cost, FPS)
         draw_level(self.level)
