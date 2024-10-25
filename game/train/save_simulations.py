@@ -2,7 +2,8 @@ import math
 import os
 import random
 from pathlib import Path
-
+import pandas as pd
+from scipy.stats import linregress
 import torch
 
 import tinyphysics
@@ -22,6 +23,10 @@ class Controller:
         self.prev_actions = []
         self.replay_buffer = []
 
+        # Initialize windows for median calculations
+        self.steer_window = []
+        self.lataccel_window = []
+
     def store_transition(self, state, action):
         self.replay_buffer.append((state, action))
 
@@ -33,6 +38,31 @@ class Controller:
     def normalize_v_ego(self, v_ego_m_s):
         max_m_s = 40.0
         return v_ego_m_s / max_m_s
+
+    def calculate_median_r2(self, torque, lataccel, window_size=22):
+        """ Calculate the median R² and slope from the sliding window of data. """
+        self.steer_window.append(torque)
+        self.lataccel_window.append(lataccel)
+
+        # Keep windows within size limits
+        if len(self.steer_window) > window_size:
+            self.steer_window.pop(0)
+        if len(self.lataccel_window) > window_size:
+            self.lataccel_window.pop(0)
+
+        # Calculate and print median R² if window is ready
+        if len(self.steer_window) >= window_size:
+            # Perform linear regression on the sliding window data
+            steer_command = pd.Series(self.steer_window)
+            lat_accel = pd.Series(self.lataccel_window)
+
+            # Calculate the slope and R² (correlation and regression)
+            try:
+                slope, intercept, r_value, p_value, std_err = linregress(steer_command, lat_accel)
+                return r_value**2, slope
+            except ValueError:
+                pass
+        return 0, 0
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global SIM
@@ -50,6 +80,9 @@ class Controller:
         previous_action = 0
         if len(self.prev_actions) > 0:
             previous_action = self.prev_actions[-1]
+
+        # Append values to sliding windows for steer and target lateral acceleration
+        r2, slope = self.calculate_median_r2(previous_action, current_lataccel)
 
         # Flatten the differences into a single list
         state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['v_ego'] + diff_values['a_ego'] + [previous_action])

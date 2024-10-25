@@ -87,7 +87,7 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=
         print(f"Exporting model: {model_name}")
 
     # Adjust the dummy input size according to the model's expected input size
-    dummy_input = torch.randn(1, window_size, 13, requires_grad=True)
+    dummy_input = torch.randn(1, window_size, model.input_size, requires_grad=True)
 
     # Export the model
     torch.onnx.export(

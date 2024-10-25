@@ -3,13 +3,14 @@ import torch.nn as nn
 
 
 class PIDControllerNet(nn.Module):
-    def __init__(self, hidden_size=80, num_layers=2, window_size=7):
+    def __init__(self, hidden_size=80, num_layers=2, window_size=7, input_size=13):
         super(PIDControllerNet, self).__init__()
         self.window_size = window_size
         self.hidden_size = hidden_size
+        self.input_size = input_size
 
         # Update input_size to 13 to match the number of input features
-        self.lstm = nn.LSTM(input_size=13, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
         self.fc1 = nn.Linear(hidden_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, 1)
