@@ -165,12 +165,12 @@ def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_latacc
         scaled_road = pygame.transform.scale(get_road_segment_image(i + index), (scaled_road_width, scaled_road_height))
         screen.blit(scaled_road, (road_x, segment_y))
 
-        # Draw arrow
+        # Draw arrow on either side of the road segment
         if i > 0:
             prev_road_roll = road_rolls[i - 1]
             future_road_roll = road_rolls[i]
             roll_delta = future_road_roll - prev_road_roll
-            draw_arrow(road_x, segment_y, roll_delta)
+            draw_arrow(road_x, segment_y, scaled_road_width, roll_delta, scale_factor)
 
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
@@ -197,45 +197,48 @@ def draw_steering(torque_value, increment, ctrl_pressed):
     screen.blit(torque_text, (text_rect.x, text_rect.y + 5))
     screen.blit(increment_text, (text_rect.x + 15, text_rect.y - 20))
 
-def draw_arrow(road_x, road_y, road_roll):
-    # Constants
-    max_arrow_length = 6000  # Max arrow length in pixels, used to scale road roll
-    arrow_height = 2         # Height of the arrow line in pixels
-    triangle_size = 10       # Size of the triangle at the end of the arrow
-    threshold = 15.0         # Threshold below which we don't show the triangle
+def draw_arrow(road_x, road_y, road_width, road_roll, scale_factor):
+    # Base constants for the arrow appearance
+    max_arrow_length = 10000       # Base max arrow length, before scaling
+    arrow_height = int(4 * scale_factor)  # Scaled height of the arrow line
+    base_triangle_size = 10       # Base size of the triangle at the end of the arrow
+    threshold = 15                # Minimum scaled arrow length to be drawn
 
-    # Calculate the length of the arrow based on road_roll magnitude
-    arrow_length = max_arrow_length * abs(road_roll)
-    road_center = ROAD_WIDTH // 2
+    # Calculate the scaled arrow length and triangle size based on scale_factor
+    arrow_length = max_arrow_length * abs(road_roll) * scale_factor
+    triangle_size = int(base_triangle_size * scale_factor)
 
-    # Define the side of the road where the arrow should be drawn
+    # Skip drawing if the arrow is too short after scaling
+    if arrow_length < threshold * scale_factor:
+        return
+
+    # Position the arrows to start at the scaled edges of the road and extend outward
+    base_offset = 550
+    left_road_offset = int(base_offset * scale_factor)  # Scaled offset for left road edge
+    right_road_offset = road_width - int(base_offset * scale_factor)  # Scaled offset for right road edge
+    left_edge_x = road_x + left_road_offset  # Starting x position of the left road edge
+    right_edge_x = road_x + right_road_offset  # Starting x position of the right road edge
+    start_y = road_y  # Vertical position of the arrow
+
+    # Draw left arrow (indicating a roll to the left)
     if road_roll > 0:
-        start_x = road_x + road_center - 120  # Left side of the road
-        end_x = start_x - arrow_length  # Arrow points left
-    else:
-        start_x = road_x + road_center + 120  # Right side of the road
-        end_x = start_x + arrow_length  # Arrow points right
-
-    start_y = road_y
-
-    # Draw the triangle if abs(road_roll) is above the threshold
-    if abs(arrow_length) >= threshold:
-        # Draw the horizontal line (2px tall)
-        pygame.draw.line(screen, WHITE, (start_x, start_y), (end_x, start_y), arrow_height)
-
-        # Triangle points to the direction of the roll
-        if road_roll > 0:
-            triangle_points = [(end_x, start_y),
-                               (end_x + triangle_size, start_y - triangle_size // 2),
-                               (end_x + triangle_size, start_y + triangle_size // 2)]
-        else:
-            triangle_points = [(end_x, start_y),
-                               (end_x - triangle_size, start_y - triangle_size // 2),
-                               (end_x - triangle_size, start_y + triangle_size // 2)]
-
-        # Draw the triangle
+        pygame.draw.line(screen, WHITE, (left_edge_x, start_y), (left_edge_x - arrow_length, start_y), arrow_height)
+        triangle_points = [
+            (left_edge_x - arrow_length, start_y),
+            (left_edge_x - arrow_length + triangle_size, start_y - triangle_size // 2),
+            (left_edge_x - arrow_length + triangle_size, start_y + triangle_size // 2)
+        ]
         pygame.draw.polygon(screen, WHITE, triangle_points)
 
+    # Draw right arrow (indicating a roll to the right)
+    elif road_roll < 0:
+        pygame.draw.line(screen, WHITE, (right_edge_x, start_y), (right_edge_x + arrow_length, start_y), arrow_height)
+        triangle_points = [
+            (right_edge_x + arrow_length, start_y),
+            (right_edge_x + arrow_length - triangle_size, start_y - triangle_size // 2),
+            (right_edge_x + arrow_length - triangle_size, start_y + triangle_size // 2)
+        ]
+        pygame.draw.polygon(screen, WHITE, triangle_points)
 
 def draw_score(lat_accel_cost, jerk_cost, total_cost, fps):
     # Create the text surfaces
