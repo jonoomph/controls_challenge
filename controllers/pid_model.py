@@ -11,7 +11,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=22, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-vovcC-23.onnx"):
+    def __init__(self, window_size=22, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-SumWJ-12.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -79,7 +79,7 @@ class Controller(BaseController):
             float: Control signal for steering.
         """
         # Calculate differences for future segments
-        future_segments = [(0, 2), (2, 6), (6, 12)]
+        future_segments = [(0, 1), (1, 3), (2, 5), (5, 9), (9, 14), (14, 20)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],

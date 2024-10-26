@@ -154,3 +154,54 @@
     27 LEVELS (WHEEL ONLY)
     23: test	1.045	14.524	66.753
 
+    38 LEVELS (WHEEL ONLY)
+    5: test	1.261	14.106	77.170
+
+    File                 Mean Loss       Epoch Count
+    ---------------------------------------------
+    1   ./simulations/00140.pth 0.064160        100
+    2   ./simulations/02355.pth 0.064128        100
+    3   ./simulations/00437.pth 0.057320        100
+    4   ./simulations/03273.pth 0.039570        100
+    5   ./simulations/04358.pth 0.030827        100
+    6   ./simulations/05216.pth 0.027430        100
+    7   ./simulations/00367.pth 0.027366        100
+    8   ./simulations/00669.pth 0.024083        100
+    9   ./simulations/00236.pth 0.021043        100
+    10  ./simulations/03975.pth 0.020578        100
+
+    38 LEVELS (NO CHANGES) - lowering LR
+    15: test	1.118	14.319	70.242
+
+    File                 Mean Loss       Epoch Count
+    ---------------------------------------------
+    1   ./simulations/02355.pth 0.272035        40
+    2   ./simulations/00140.pth 0.234221        40
+    3   ./simulations/00437.pth 0.220579        40
+    4   ./simulations/04358.pth 0.122256        40
+    5   ./simulations/03273.pth 0.120247        40
+    6   ./simulations/05679.pth 0.089220        40
+    7   ./simulations/05216.pth 0.083075        40
+    8   ./simulations/00367.pth 0.082475        40
+    9   ./simulations/00669.pth 0.082144        40
+    10  ./simulations/05324.pth 0.076274        40
+
+    NO CHANGES - Changing NN to 96 AND 64 params
+    X: BOTH BAD (96 worst performance, 64 also bad, 75 a little bad)
+    40: test	1.077	15.159	69.033 - NN to 85
+
+    NO CHANGES - NN to 85, input size = 25 (6 future values for all 4 categories) + previous action
+    X: test	1.122	14.514	70.614
+
+    Removed level 02355 (worst training loss)
+    X: Got a little worse
+
+    Added levels 51, 69 (worst scores in top 100)
+    X: test	1.114	14.449	70.138
+
+    ADDED DROPOUT (learning slower, more gradual, not as good scores)
+    37: test	1.100	14.683	69.700 = dropout 0.3
+    X:   = dropout 0.4 = identical to 0.3 dropout
+
+    NO DROPOUT (lr=5.1039484000888e-05, seed=468075), Removed level 51, 29
+    12: test	1.111	14.349	69.875

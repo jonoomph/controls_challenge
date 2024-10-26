@@ -134,9 +134,11 @@ def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_latacc
 
     # Create a list of lateral accelerations (reversed future segments + current segment)
     lataccels = [target_lataccel] + list(future_plan.lataccel[:num_segments])
+    road_rolls = [roll_lataccel] + list(future_plan.roll_lataccel[:num_segments])
     if len(lataccels) < num_segments:
         padding_needed = num_segments - len(lataccels)
         lataccels.extend([0.0] * padding_needed)
+        road_rolls.extend([0.0] * padding_needed)
 
     total_height = 0  # Track total height to correctly position Y-axis
 
@@ -162,6 +164,13 @@ def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_latacc
         # Scale and draw the road segment
         scaled_road = pygame.transform.scale(get_road_segment_image(i + index), (scaled_road_width, scaled_road_height))
         screen.blit(scaled_road, (road_x, segment_y))
+
+        # Draw arrow
+        if i > 0:
+            prev_road_roll = road_rolls[i - 1]
+            future_road_roll = road_rolls[i]
+            roll_delta = future_road_roll - prev_road_roll
+            draw_arrow(road_x, segment_y, roll_delta)
 
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)

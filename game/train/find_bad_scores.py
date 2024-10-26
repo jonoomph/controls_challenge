@@ -6,7 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 DATAFILES_START = 0
-DATAFILES_LENGTH = 5000
+DATAFILES_LENGTH = 100
 MAX_TRAINING_ROWS = 600
 model_path = Path('../../models/tinyphysics.onnx')
 
@@ -27,9 +27,6 @@ def run_simulation(file_index, model_path):
 
 
 def find_bad_scores():
-    # List to store the scores for each file
-    scores = []
-
     # Prepare a partial function with the model path
     simulate_partial = partial(run_simulation, model_path=model_path)
 

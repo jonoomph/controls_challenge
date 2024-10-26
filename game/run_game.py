@@ -5,7 +5,7 @@ import math
 from draw_game import *
 
 DEBUG = True
-LEVEL_IDX = 5
+LEVEL_IDX = 4
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
@@ -134,18 +134,18 @@ class Controller(BaseController):
         if keys[pygame.K_SPACE] or (CHECKPOINT and index < CHECKPOINT):
             self.internal_pid.correct(replay_torque)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - replay_torque))
-
             # move wheel to correct position (pause game if needed)
             self.turn_wheel(self.torque_levels[self.current_torque_index])
 
         if keys[pygame.K_c]:
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - pid_action))
+            # move wheel to correct position (pause game if needed)
+            self.turn_wheel(self.torque_levels[self.current_torque_index])
 
         # Use initial steer (if any)
         if not math.isnan(steer):
             self.internal_pid.correct(steer)
             self.current_torque_index = min(range(len(self.torque_levels)), key=lambda i: abs(self.torque_levels[i] - steer))
-
             # move wheel to correct position (pause game if needed)
             self.turn_wheel(self.torque_levels[self.current_torque_index])
 

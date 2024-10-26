@@ -68,7 +68,7 @@ class Controller:
         global SIM
 
         # Compute the differences from the current state for each segment
-        future_segments = [(0, 2), (2, 6), (6, 12)]
+        future_segments = [(0, 1), (1, 3), (2, 5), (5, 9), (9, 14), (14, 20)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
