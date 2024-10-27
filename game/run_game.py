@@ -161,6 +161,7 @@ class Controller(BaseController):
         draw_road(future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
         draw_car(WIDTH // 2, HEIGHT - 50, car_rotation, target_lataccel - current_lataccel)
         draw_steering(torque_output, self.ctrl_increment, self.ctrl_pressed)
+        draw_speedometer(state.v_ego * 2.23694, 0, 100)
         draw_score(self.lat_accel_cost, self.jerk_cost, self.total_cost, FPS)
         draw_level(self.level)
         if keys[pygame.K_SPACE]:

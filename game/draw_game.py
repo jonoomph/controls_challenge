@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import numpy as np
+import math
 from g29py import g29
 
 # Initialize PyGame and the PS5 controller
@@ -32,6 +33,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GRAY = (100, 100, 100)
+LIGHT_GRAY = (211, 211, 211)
 GREEN = (0, 255, 0)
 TEAL = (0, 40, 100)
 
@@ -123,6 +125,16 @@ def get_road_segment_image(index):
     else:
         return blank_image
 
+def get_arrow_color(index):
+    if index < 144:
+        return WHITE
+    elif index < 288:
+        return WHITE
+    elif index < 433:
+        return LIGHT_GRAY
+    elif index < 577:
+        return WHITE
+
 def draw_background():
     screen.blit(background_image, (0, 0))
 
@@ -166,11 +178,51 @@ def draw_road(future_plan, car_y, current_lataccel, target_lataccel, roll_latacc
         screen.blit(scaled_road, (road_x, segment_y))
 
         # Draw arrow on either side of the road segment
-        if i > 0:
+        if i > 0 and i + index < 577:
             prev_road_roll = road_rolls[i - 1]
             future_road_roll = road_rolls[i]
             roll_delta = future_road_roll - prev_road_roll
-            draw_arrow(road_x, segment_y, scaled_road_width, roll_delta, scale_factor)
+            arrow_color = get_arrow_color(i + index)
+            draw_arrow(road_x, segment_y, scaled_road_width, roll_delta, scale_factor, arrow_color)
+
+def draw_speedometer(current_speed, min_speed=0, max_speed=120):
+    # Define speedometer parameters
+    gauge_start_angle = -120  # Left limit in degrees
+    gauge_end_angle = 120  # Right limit in degrees
+    center_position = (200, HEIGHT - 100)  # Position on the screen
+    radius = 50  # Radius of the gauge
+    arc_thickness = 20  # Thickness of the arc
+
+    # Map current speed to angle (proportional fill)
+    speed_ratio = max(min((current_speed - min_speed) / (max_speed - min_speed), 1), 0)
+    current_angle = gauge_start_angle + (gauge_end_angle - gauge_start_angle) * speed_ratio
+
+    # Draw the filled arc up to the current speed
+    for angle in range(gauge_start_angle, int(current_angle)):
+        color_ratio = (angle - gauge_start_angle) / (gauge_end_angle - gauge_start_angle)
+
+        # Adjust color so it moves smoothly from green to red
+        color = (
+            int((1 - color_ratio) * 0 + color_ratio * 255),  # R: fades from 0 to 255
+            int((1 - color_ratio) * 255 + color_ratio * 0),  # G: fades from 255 to 0
+            0  # B: constant 0
+        )
+
+        # Calculate arc coordinates
+        radian_angle = math.radians(angle)
+        x_start = int(center_position[0] + math.cos(radian_angle) * (radius - arc_thickness))
+        y_start = int(center_position[1] + math.sin(radian_angle) * (radius - arc_thickness))
+        x_end = int(center_position[0] + math.cos(radian_angle) * radius)
+        y_end = int(center_position[1] + math.sin(radian_angle) * radius)
+
+        pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 2)
+
+    # Render the current speed as text below the gauge
+    font = pygame.font.Font(None, 32)
+    speed_text = font.render(f"{current_speed:.0f}", True, (255, 255, 255))
+    text_rect = speed_text.get_rect(center=(center_position[0], center_position[1]))
+    screen.blit(speed_text, text_rect)
+
 
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
@@ -197,7 +249,7 @@ def draw_steering(torque_value, increment, ctrl_pressed):
     screen.blit(torque_text, (text_rect.x, text_rect.y + 5))
     screen.blit(increment_text, (text_rect.x + 15, text_rect.y - 20))
 
-def draw_arrow(road_x, road_y, road_width, road_roll, scale_factor):
+def draw_arrow(road_x, road_y, road_width, road_roll, scale_factor, color):
     # Base constants for the arrow appearance
     max_arrow_length = 10000       # Base max arrow length, before scaling
     arrow_height = int(4 * scale_factor)  # Scaled height of the arrow line
@@ -222,23 +274,23 @@ def draw_arrow(road_x, road_y, road_width, road_roll, scale_factor):
 
     # Draw left arrow (indicating a roll to the left)
     if road_roll > 0:
-        pygame.draw.line(screen, WHITE, (left_edge_x, start_y), (left_edge_x - arrow_length, start_y), arrow_height)
+        pygame.draw.line(screen, color, (left_edge_x, start_y), (left_edge_x - arrow_length, start_y), arrow_height)
         triangle_points = [
             (left_edge_x - arrow_length, start_y),
             (left_edge_x - arrow_length + triangle_size, start_y - triangle_size // 2),
             (left_edge_x - arrow_length + triangle_size, start_y + triangle_size // 2)
         ]
-        pygame.draw.polygon(screen, WHITE, triangle_points)
+        pygame.draw.polygon(screen, color, triangle_points)
 
     # Draw right arrow (indicating a roll to the right)
     elif road_roll < 0:
-        pygame.draw.line(screen, WHITE, (right_edge_x, start_y), (right_edge_x + arrow_length, start_y), arrow_height)
+        pygame.draw.line(screen, color, (right_edge_x, start_y), (right_edge_x + arrow_length, start_y), arrow_height)
         triangle_points = [
             (right_edge_x + arrow_length, start_y),
             (right_edge_x + arrow_length - triangle_size, start_y - triangle_size // 2),
             (right_edge_x + arrow_length - triangle_size, start_y + triangle_size // 2)
         ]
-        pygame.draw.polygon(screen, WHITE, triangle_points)
+        pygame.draw.polygon(screen, color, triangle_points)
 
 def draw_score(lat_accel_cost, jerk_cost, total_cost, fps):
     # Create the text surfaces
