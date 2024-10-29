@@ -206,3 +206,13 @@
     NO DROPOUT (lr=5.1039484000888e-05, seed=468075), Removed level 51, 29
     12: test	1.111	14.349	69.875
     12: test	1.368	14.559	82.937 (5000 tests)
+
+    UPDATED scores on 5 levels (using arrows / road roll in game)
+    12: test	1.116	14.418	70.207
+    15: test	1.116	14.459	70.280  # update 2 more levels scores
+    1   ./simulations/02355.pth 0.414758        25
+    2   ./simulations/00140.pth 0.371897        25
+    3   ./simulations/00437.pth 0.338049        25
+    4   ./simulations/04358.pth 0.189470        25
+    5   ./simulations/03273.pth 0.173253        25
+    6   ./simulations/05679.pth 0.135399        25
