@@ -1,7 +1,6 @@
 import tinyphysics
 from tinyphysics import CONTEXT_LENGTH
 from controllers import BaseController, pid, replay
-import math
 from draw_game import *
 
 DEBUG = True
@@ -9,6 +8,7 @@ LEVEL_IDX = 0
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
+HISTORY = { "torques": [], "diffs": [] }
 
 
 class Controller(BaseController):
@@ -153,13 +153,15 @@ class Controller(BaseController):
         if not torque_output:
             torque_output = self.torque_levels[self.current_torque_index]
 
-        # Rotate the car based on current lateral acceleration
-        car_rotation = torque_output * 10
+        # Append the attempt's torques and lagged diffs to history
+        HISTORY_INDEX = len(HISTORY["torques"]) - 1
+        HISTORY["torques"][HISTORY_INDEX].append(torque_output)
+        HISTORY["diffs"][HISTORY_INDEX].append(target_lataccel - current_lataccel)
 
         # Draw the game elements
         draw_background()
         draw_road(future_plan, HEIGHT - 100, current_lataccel, target_lataccel, state.roll_lataccel, index)
-        draw_car(WIDTH // 2, HEIGHT - 50, car_rotation, target_lataccel - current_lataccel)
+        draw_car(WIDTH // 2, HEIGHT - 50, 0, target_lataccel - current_lataccel)
         draw_steering(torque_output, self.ctrl_increment, self.ctrl_pressed)
         draw_speedometer(state.v_ego * 2.23694, 0, 100)
         draw_score(self.lat_accel_cost, self.jerk_cost, self.total_cost, FPS)
@@ -188,6 +190,11 @@ class Controller(BaseController):
 def main():
     global LEVEL_IDX
     LEVEL_NUM = LEVELS[LEVEL_IDX]
+
+    # Add new history record
+    HISTORY["torques"].append([])
+    HISTORY["diffs"].append([])
+
     DATA_PATH = os.path.join(TINY_DATA_DIR, f"{LEVEL_NUM:05}.csv")
     controller = Controller(LEVEL_NUM)
     pid_model = tinyphysics.TinyPhysicsModel(MODEL_PATH, debug=DEBUG)
@@ -202,11 +209,12 @@ def main():
 
     def next_level_callback():
         nonlocal running
-        global LEVEL_IDX, DATA_PATH, CHECKPOINT
+        global LEVEL_IDX, DATA_PATH, CHECKPOINT, HISTORY
         running = False
         CHECKPOINT = 0
         LEVEL_IDX += 1  # Increment to next level
         LEVEL_NUM = LEVELS[LEVEL_IDX]
+        HISTORY = {"torques": [], "diffs": []}
         DATA_PATH = os.path.join(TINY_DATA_DIR, f"{LEVEL_NUM:05}.csv")
         main()  # Start next level
 
