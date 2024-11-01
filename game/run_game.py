@@ -2,13 +2,62 @@ import tinyphysics
 from tinyphysics import CONTEXT_LENGTH
 from controllers import BaseController, pid, replay
 from draw_game import *
+import numpy as np
 
 DEBUG = True
-LEVEL_IDX = 0
+LEVEL_IDX = 1
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 HISTORY = { "torques": [], "diffs": [] }
+
+
+def get_best_torque_sequence(history, block_size=10, lag=5):
+    num_attempts = len(history["torques"])
+    num_points = len(history["torques"][0])
+
+    # Initialize a list to store the final best torques sequence
+    best_torques = []
+
+    # Loop through each block position
+    for block_start in range(0, num_points, block_size):
+        best_block_torques = None
+        best_block_diff_sum = float("inf")
+
+        # Determine the lagged range for the diff block
+        diff_block_start = min(block_start + lag, num_points - 1)
+        diff_block_end = min(diff_block_start + block_size, num_points)
+
+        # Find the best block across all attempts
+        for attempt_idx in range(num_attempts):
+            torques = history["torques"][attempt_idx]
+            diffs = history["diffs"][attempt_idx]
+
+            # Calculate the sum of absolute diffs for this lagged block
+            block_diffs = diffs[diff_block_start:diff_block_end]
+            block_diff_sum = sum(abs(d) for d in block_diffs)
+
+            # Determine the corresponding torque block range without lag
+            torque_block_start = block_start
+            torque_block_end = min(block_start + block_size, num_points)
+            selected_torques = torques[torque_block_start:torque_block_end]
+
+            # If this block has the lowest diff sum so far, select it
+            if block_diff_sum < best_block_diff_sum:
+                best_block_diff_sum = block_diff_sum
+                best_block_torques = selected_torques
+
+        # Append the selected block to the final best torques sequence
+        best_torques.extend(best_block_torques)
+
+    # Handle any remaining values at the end that don’t fit into a full block
+    if len(best_torques) < num_points:
+        remaining_torques = history["torques"][0][len(best_torques):num_points]
+        best_torques.extend(remaining_torques)
+
+    # Ensure the final output has the exact number of data points by trimming if oversize
+    best_torques = best_torques[:num_points]
+    return best_torques
 
 
 class Controller(BaseController):
@@ -241,6 +290,21 @@ def main():
             if check_high_score(f"{LEVEL_NUM:05}", current_score):
                 won = True
                 save_torques(controller.torques, f"{LEVEL_NUM:05}")
+
+            # Get best blocks from history
+            best_torques = list(get_best_torque_sequence(HISTORY))
+            print("Best Torque Path:", best_torques)
+
+            pid_model = tinyphysics.TinyPhysicsModel(MODEL_PATH, debug=DEBUG)
+            replay_sim = tinyphysics.TinyPhysicsSimulator(pid_model, str(DATA_PATH), controller=replay.Controller(torques=best_torques), debug=False)
+            replay_sim.rollout()
+            replay_score = replay_sim.compute_cost()
+            print(f"BEST SCORE: {replay_score}")
+
+            with open(f"{LEVEL_NUM:05}-torques.json", "w") as f1:
+                f1.write(json.dumps(controller.torques))
+            with open(f"{LEVEL_NUM:05}-best.json", "w") as f1:
+                f1.write(json.dumps(best_torques))
 
             end_screen(won, pid_score, current_score, previous_score, next_level_callback, try_again_callback)
             running = False

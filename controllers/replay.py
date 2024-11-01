@@ -4,9 +4,12 @@ from . import BaseController
 import numpy as np
 
 class Controller(BaseController):
-    def __init__(self, level_num=2):
+    def __init__(self, level_num=2, torques=None):
         level_file_path = f'/home/jonathan/apps/controls_challenge/game/data/{level_num:05}.npy'
-        if os.path.exists(level_file_path):
+        if torques and len(torques) > 0:
+            print(f"Loading replay data via list")
+            self.torques = torques
+        elif os.path.exists(level_file_path):
             print(f"Loading replay data: {level_file_path}")
             self.torques = np.load(level_file_path)
         else:

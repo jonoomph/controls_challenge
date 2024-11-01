@@ -208,6 +208,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=25, analyze=True, logging=True, window_size=22, batch_size=44, lr=5.1039484000888e-05, seed=962)
+    loss = start_training(epochs=35, analyze=True, logging=True, window_size=22, batch_size=44, lr=5.1039484000888e-05, seed=962)
     print(loss)
 
