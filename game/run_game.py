@@ -4,15 +4,15 @@ from controllers import BaseController, pid, replay
 from draw_game import *
 import numpy as np
 
-DEBUG = True
-LEVEL_IDX = 1
+LEVEL_IDX = 11
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 HISTORY = { "torques": [], "diffs": [] }
+DEBUG = True
 
 
-def get_best_torque_sequence(history, block_size=10, lag=5):
+def get_best_torque_sequence(history, block_size=10, lag=3):
     num_attempts = len(history["torques"])
     num_points = len(history["torques"][0])
 
@@ -287,24 +287,26 @@ def main():
             current_score = controller.total_cost
             pid_score = pid_sim.compute_cost().get("total_cost")
             previous_score = high_scores.get(f"{LEVEL_NUM:05}", 0.0)
-            if check_high_score(f"{LEVEL_NUM:05}", current_score):
-                won = True
-                save_torques(controller.torques, f"{LEVEL_NUM:05}")
 
             # Get best blocks from history
-            best_torques = list(get_best_torque_sequence(HISTORY))
-            print("Best Torque Path:", best_torques)
+            best_combined_torques = list(get_best_torque_sequence(HISTORY))
 
+            # Rollout of 'best' score to verify
             pid_model = tinyphysics.TinyPhysicsModel(MODEL_PATH, debug=DEBUG)
-            replay_sim = tinyphysics.TinyPhysicsSimulator(pid_model, str(DATA_PATH), controller=replay.Controller(torques=best_torques), debug=False)
+            replay_sim = tinyphysics.TinyPhysicsSimulator(pid_model, str(DATA_PATH), controller=replay.Controller(torques=best_combined_torques), debug=False)
             replay_sim.rollout()
-            replay_score = replay_sim.compute_cost()
-            print(f"BEST SCORE: {replay_score}")
+            best_combined_score = replay_sim.compute_cost()["total_cost"]
 
-            with open(f"{LEVEL_NUM:05}-torques.json", "w") as f1:
-                f1.write(json.dumps(controller.torques))
-            with open(f"{LEVEL_NUM:05}-best.json", "w") as f1:
-                f1.write(json.dumps(best_torques))
+            if best_combined_score < current_score:
+                print(f"Best score {best_combined_score} lower than current score: {current_score}, replacing it...")
+                current_score = best_combined_score
+            else:
+                print(f"Combined score is {best_combined_score}")
+
+            if check_high_score(f"{LEVEL_NUM:05}", current_score):
+                print(f"New high score: {current_score}, replacing previous high score: {previous_score}")
+                won = True
+                save_torques(controller.torques, f"{LEVEL_NUM:05}")
 
             end_screen(won, pid_score, current_score, previous_score, next_level_callback, try_again_callback)
             running = False

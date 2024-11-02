@@ -221,3 +221,13 @@
     25: test	0.981	15.242	64.276 (100 levels)
     30: test	0.950	15.312	62.812 (100 levels)
     30: test	1.092	16.669	71.246 (5000 levels)
+
+    IMPROVED 10 high scores
+    34: test	0.976	15.593	64.404 (100 levels, window size 22)
+    37: test	0.951	15.717	63.261 (window size 30)
+    37: test	0.947	15.689	63.030 (window size 20)
+
+    REMOVING level 140 + ignoring windows > diff_threshold
+    30: test	1.185	14.460	73.693 (diff .085, window size 20)
+    30: test	0.942	15.541	62.646 (diff .1, window size 20)
+    34: test	0.942	15.541	62.646 (no diffs)
