@@ -22,7 +22,7 @@ def start_testing(filter=None, logging=True, window_size=22, training_files=25):
 
     for model_name in tqdm(sorted(os.listdir("onnx")), disable=not logging):
         model_path = os.path.abspath(os.path.join("onnx", model_name))
-        if os.path.isdir(model_path) or (filter and filter not in model_name):
+        if os.path.isdir(model_path) or (filter and filter not in model_name) or not model_path.endswith(".onnx"):
             continue
 
         for file_index in range(DATAFILES_START, DATAFILES_START + training_files):

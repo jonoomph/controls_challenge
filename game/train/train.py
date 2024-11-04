@@ -95,16 +95,16 @@ class TrainingRun:
             self.output_window.pop(0)
 
 
-def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=True):
+def export_model(epoch=None, prefix="model", window_size=7, model=None, optimizer=None, logging=True):
     # Save the trained model to an ONNX file
-    model_name = f"onnx/lat_accel_predictor-{prefix}-{epoch}.onnx"
+    model_name = f"onnx/model-{prefix}-{epoch}.onnx"
     if logging:
         print(f"Exporting model: {model_name}")
 
     # Adjust the dummy input size according to the model's expected input size
     dummy_input = torch.randn(1, window_size, model.input_size, requires_grad=True)
 
-    # Export the model
+    # Export the model for onnx
     torch.onnx.export(
         model,
         dummy_input,
@@ -116,6 +116,12 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=
         output_names=['output'],
         dynamic_axes={'input': {0: 'batch_size', 1: 'window_size'}, 'output': {0: 'batch_size'}}
     )
+
+    # Export model and optimizer (in pytorch syntax)
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, f'onnx/model-{prefix}-{epoch}.pth')
 
 
 EXPORT_INTERVAL = 5
@@ -217,7 +223,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
         total_loss += epoch_loss / len(DATAFILES)
 
         # Export model
-        export_model(epoch + 1, prefix, window_size, model, logging)
+        export_model(epoch + 1, prefix, window_size, model, optimizer, logging)
 
         # Log to graph
         if logging:
@@ -259,6 +265,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=60, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00004, seed=962)
+    loss = start_training(epochs=80, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00004, seed=962)
     print(loss)
 
