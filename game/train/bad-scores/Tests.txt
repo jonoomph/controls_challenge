@@ -230,4 +230,47 @@
     REMOVING level 140 + ignoring windows > diff_threshold
     30: test	1.185	14.460	73.693 (diff .085, window size 20)
     30: test	0.942	15.541	62.646 (diff .1, window size 20)
-    34: test	0.942	15.541	62.646 (no diffs)
+
+    NO DIFFS - removed levels
+    - removed 140 - got tiny bit better
+    - removed 437 - got worse (added back)
+    - removed 2355 - got tiny bit better: test	0.944	15.572	62.790
+    - removed 7283 - got much worse (added back)
+    - removed 6828 - got much worse (added back)
+    - removed 7614 - got much worse (added back)
+    - removed 4358 - got little worse (added back)
+
+    1   ./simulations/00437.pth 0.098631        65
+    2   ./simulations/07283.pth 0.092984        65
+    3   ./simulations/06828.pth 0.070252        65
+    4   ./simulations/07614.pth 0.065340        65
+    5   ./simulations/04358.pth 0.060257        65
+    6   ./simulations/03273.pth 0.054075        65
+    7   ./simulations/07682.pth 0.049648        65
+
+    DIFFS forward and backwards (0.03 to 1.0, 1.0 to 0.03)
+    - No improvement
+    - Linear (1.0 to 0.03), lr=0.000055: worse
+    - Sigmoid curve (1.0 to 0.03), lr=0.000055, removed 8027: test	0.968	15.465	63.871
+    - Sigmoid curve (0.03 to 1.0), lr=0.000055, removed 8027: test	0.968	15.465	63.871
+    - No DIFF, lr=0.000055, removed 8027: test	0.969	15.284	63.718
+
+    NO DIFFS, Adding 3 new files (1 by 1), updated 7682
+    - Updated 7682: got much worse
+    - Removed 7682: smoother cost curve, but a little worse (reverting back to un-updated version)
+    - Added 7724, 7922, and 8027: Nice cost curve, but got a little worse
+    - Added just 7724, 7922: Nice cost curve, but little worse: test	0.978	15.264	64.160
+
+    CHANGE OPTIMIZER to AdamW(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    - terrible / broken
+
+    SIMULATIONS
+    - Random 20 files (seed 1979): 47: test	0.972	14.976	63.593
+    - Update lr=5e-04: test	0.949	15.636	63.109
+    - Update lr=1.5e-04, seed 962:
+    - Random 15 files (seed 42):
+    - ONLY files 20% better than PID scores: test	0.968	15.188	63.603
+    - ONLY files 15% better than PID scores: test	0.975	15.392	64.165
+    - ONLY files 10% better than PID scores: test	0.923	15.556	61.714
+    - ONLY files 5% better than PID scores: test	0.949	15.345	62.802
+

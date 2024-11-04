@@ -171,7 +171,17 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
     total_loss = 0
     threads = []
-    diff_thresholds = np.linspace(0.05, 0.25, epochs)
+
+    # forward = np.linspace(0.03, 1.0, round(epochs / 2.0), endpoint=False)
+    # backward = np.linspace(1.0, 0.03, round(epochs / 2.0))
+    # diff_thresholds = np.concatenate((forward, backward))
+    diff_thresholds = np.linspace(1.0, 0.04, epochs)
+
+    # curve for diff
+    # x_sigmoid = np.linspace(1.0, 0.03, epochs)
+    # sigmoid_curve = 1 / (1 + np.exp(-x_sigmoid))
+    # diff_thresholds = 1.0 + (0.03 - 1.0) * sigmoid_curve
+    # reversed(diff_thresholds)
 
     for epoch in range(epochs):
         epoch_loss = 0
@@ -249,6 +259,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=65, analyze=True, logging=True, window_size=30, batch_size=44, lr=5.1039484000888e-05, seed=962)
+    loss = start_training(epochs=60, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00004, seed=962)
     print(loss)
 

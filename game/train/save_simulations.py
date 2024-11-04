@@ -7,12 +7,11 @@ from scipy.stats import linregress
 import torch
 
 import tinyphysics
-from controllers import replay
+from controllers import replay, pid
 
 SIM = None
 EPOCHS = 1
 DATAFILES_START = 0
-DATAFILES_LENGTH = 500
 model_path = Path('../../models/tinyphysics.onnx')
 
 
@@ -130,19 +129,20 @@ def get_random_files(folder_path, num_files=1, seed=1):
     return sampled_files
 
 
-def start_training():
+def start_training(num_files=99, threshold=0.9):
     global SIM
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
 
     # Get random files
-    file_list = get_random_files('../data/', num_files=DATAFILES_LENGTH, seed=1979)
+    file_list = get_random_files('../data/', num_files=num_files, seed=1979)
 
     for epoch in range(EPOCHS):
         for file_name in file_list:
             level_num = int(os.path.splitext(file_name)[0])
             data_path = os.path.join('../../data/', f'{level_num:05}.csv')
 
-            for controller_name, internal_controller in [("PIDReplay", replay.Controller(level_num=level_num))]:
+            scores = {}
+            for controller_name, internal_controller in [("PIDReplay", replay.Controller(level_num=level_num)), ("PID", pid.Controller())]:
                 # Create simulator
                 SIM = tinyphysics.TinyPhysicsSimulator(tinyphysicsmodel, str(data_path), controller=Controller(epoch, internal_controller), debug=False)
 
@@ -151,9 +151,18 @@ def start_training():
 
                 # Save model data
                 cost = SIM.compute_cost()
-                model_data = SIM.controller.replay_buffer
-                print(f'Saving Model: {level_num:05d}', cost["total_cost"])
-                torch.save(model_data, f'simulations/{level_num:05d}.pth')
+                scores[controller_name] = cost["total_cost"]
+
+                if controller_name == "PIDReplay":
+                    model_data = SIM.controller.replay_buffer
+                    print(f'Saving Model: {level_num:05d}', cost["total_cost"])
+                    torch.save(model_data, f'simulations/{level_num:05d}.pth')
+
+            # Don't keep bad SIM data
+            #if scores["PIDReplay"] - scores["PID"] > threshold:
+            if scores["PIDReplay"] > scores["PID"] * threshold:
+                print(f"Removing level {level_num:05d}. Score is worse than PID: {scores}")
+                os.unlink(f'simulations/{level_num:05d}.pth')
 
     print("Training completed!")
 
