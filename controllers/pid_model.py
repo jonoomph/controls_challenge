@@ -11,7 +11,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=22, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/lat_accel_predictor-SumWJ-12.onnx"):
+    def __init__(self, window_size=22, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-OKBCV-60.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -40,31 +40,6 @@ class Controller(BaseController):
         """ Normalize the vehicle's speed for model input. """
         return v_ego_m_s / 40.0
 
-    def calculate_median_r2(self, torque, lataccel, window_size=22):
-        """ Calculate the median R² and slope from the sliding window of data. """
-        self.steer_window.append(torque)
-        self.lataccel_window.append(lataccel)
-
-        # Keep windows within size limits
-        if len(self.steer_window) > window_size:
-            self.steer_window.pop(0)
-        if len(self.lataccel_window) > window_size:
-            self.lataccel_window.pop(0)
-
-        # Calculate and print median R² if window is ready
-        if len(self.steer_window) >= window_size:
-            # Perform linear regression on the sliding window data
-            steer_command = pd.Series(self.steer_window)
-            lat_accel = pd.Series(self.lataccel_window)
-
-            # Calculate the slope and R² (correlation and regression)
-            try:
-                slope, intercept, r_value, p_value, std_err = linregress(steer_command, lat_accel)
-                return r_value**2, slope
-            except ValueError:
-                pass
-        return 0, 0
-
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         """
         Update the control signal based on the current state and future plan.
@@ -89,9 +64,6 @@ class Controller(BaseController):
 
         # Prepare state input for the model
         previous_action = self.prev_actions[-1] if self.prev_actions else 0
-
-        # Append values to sliding windows for steer and target lateral acceleration
-        r2, slope = self.calculate_median_r2(previous_action, current_lataccel, self.window_size)
 
         state_input = np.array(
             diff_values['lataccel'] + diff_values['roll'] + diff_values['v_ego'] + diff_values['a_ego'] +
