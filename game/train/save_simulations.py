@@ -26,8 +26,8 @@ class Controller:
         self.steer_window = []
         self.lataccel_window = []
 
-    def store_transition(self, state, action):
-        self.replay_buffer.append((state, action))
+    def store_transition(self, state, action, future):
+        self.replay_buffer.append((state, action, future))
 
     def average(self, values):
         if len(values) == 0:
@@ -97,7 +97,7 @@ class Controller:
             action = steer
         else:
             # Store transition in the replay buffer
-            self.store_transition(state_input, action)
+            self.store_transition(state_input, action, diff_values['lataccel'])
 
         self.prev_actions.append(action)
         return action

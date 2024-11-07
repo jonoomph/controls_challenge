@@ -9,14 +9,14 @@ class PIDControllerNet(nn.Module):
         self.hidden_size = hidden_size
         self.input_size = input_size
 
-        # Update input_size to 13 to match the number of input features
+        # Define LSTM and fully connected layers
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
         self.fc1 = nn.Linear(hidden_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, 1)
+        self.fc3 = nn.Linear(hidden_size, 7)
 
     def forward(self, x):
-        # Assuming x has shape (batch_size, window_size, input_size=13)
+        # Assuming x has shape (batch_size, window_size, input_size)
         lstm_out, _ = self.lstm(x)  # lstm_out has shape (batch_size, window_size, hidden_size)
         x = lstm_out[:, -1, :]  # Take the output from the last time step
 

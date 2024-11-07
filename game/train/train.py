@@ -41,7 +41,7 @@ class TrainingRun:
 
             # Stack the predictions and solved data
             predictions_tensor = torch.cat(shuffled_predictions)
-            solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32).unsqueeze(1)
+            solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32)
 
             # Calculate loss
             loss = self.loss_fn(predictions_tensor, solved_tensor)
@@ -58,10 +58,10 @@ class TrainingRun:
             # Log the loss
             self.total_loss += loss.item()
 
-    def train(self, state_input, steer_torque, diff_threshold=0.1):
+    def train(self, state_input, steer_torque, future_diffs, diff_threshold=0.1):
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
-        self.output_window.append(steer_torque)
+        self.output_window.append([steer_torque] + future_diffs)
 
         # Process only if we have enough data for one window
         if len(self.input_window) >= self.window_size:
@@ -209,9 +209,9 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
                 for row in tensor_data_subset:
                     input_tensor = row[0]
-                    input_tensor.requires_grad_(True)
                     steer_torque = row[1]
-                    run.train(input_tensor, steer_torque, diff_threshold=diff_thresholds[epoch])
+                    future_diffs = row[2]
+                    run.train(input_tensor, steer_torque, future_diffs, diff_threshold=diff_thresholds[epoch])
 
                 # Add loss
                 epoch_loss += run.total_loss

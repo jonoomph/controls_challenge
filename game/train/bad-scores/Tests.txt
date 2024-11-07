@@ -276,7 +276,6 @@
 
     ADDED 10 new levels
     - 60: test	0.956	15.765	63.576
-    - 65:
     - Removed 08335: got worse
 
     File                 Mean Loss       Epoch Count
@@ -285,3 +284,17 @@
     2   ./simulations/00437.pth 0.138862        60
     3   ./simulations/07283.pth 0.124840        60
     4   ./simulations/06828.pth 0.105372        60
+
+    ADDED 7 MODEL OUTPUTS (STEER + 6 FUTURE DIFFS)
+    25: test	0.916	16.920	62.724 (100 tests, but 5000 test score sucks: ~80)
+    25: test	0.861	18.052	61.123 (added small torque adj in pid_model, based on diffs)
+    25: test	0.823	18.036	59.177 (made torque adj dynamic: kP=.152)
+    25: test	1.108	20.750	76.160 (approach did not scale to 5000 tests for some reason)
+    25: test	1.100	19.067	74.062 (kP=.09, still didn't scale to 5000 tests)
+
+    UPDATED MODEL NN to 100
+    24: test	0.925	16.279	62.505 (torque adj dynamic: kP=.09)
+    24: test	1.441	17.665	89.739 (5000 tests, bad score)
+
+    OPTIMIZER for LEVEL DATA
+    2: Improved total cost from 95.93814630552095 to 72.61961958909242
