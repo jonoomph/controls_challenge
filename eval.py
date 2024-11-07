@@ -3,6 +3,7 @@ import base64
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import csv
 
 
 from functools import partial
@@ -127,13 +128,31 @@ if __name__ == "__main__":
       'baseline_controller_lataccel': baseline_current_lataccel,
     })
 
-    costs.append({'controller': 'test', **test_cost})
-    costs.append({'controller': 'baseline', **baseline_cost})
+    costs.append({'controller': 'test', 'file': data_file.name, **test_cost})
+    costs.append({'controller': 'baseline', 'file': data_file.name, **baseline_cost})
 
   for controller_cat, controller_type in [('baseline', args.baseline_controller), ('test', args.test_controller)]:
     print(f"Running batch rollouts => {controller_cat} controller: {controller_type}")
     rollout_partial = partial(run_rollout, controller_type=controller_type, model_path=args.model_path, debug=False)
     results = process_map(rollout_partial, files[SAMPLE_ROLLOUTS:], max_workers=16, chunksize=10)
-    costs += [{'controller': controller_cat, **result[0]} for result in results]
+    for file, result in zip(files[SAMPLE_ROLLOUTS:], results):
+      costs.append({'controller': controller_cat, 'file': file.name, **result[0]})
 
   create_report(args.test_controller, args.baseline_controller, sample_rollouts, costs, len(files))
+
+  # Sort the costs list in descending order by 'total_cost'
+  sorted_costs = sorted(costs, key=lambda x: x['total_cost'], reverse=True)
+
+  # Define the fieldnames for the CSV
+  fieldnames = ['controller', 'file', 'jerk_cost', 'lataccel_cost', 'total_cost']
+
+  # Write the sorted costs to a CSV file
+  csv_file_name = 'eval.csv'
+  with open(csv_file_name, 'w', newline='') as csvfile:
+      writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+      writer.writeheader()
+      for cost in sorted_costs:
+          writer.writerow(cost)
+
+  print(f"Costs have been saved to '{csv_file_name}'")
