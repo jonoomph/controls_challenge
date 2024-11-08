@@ -83,7 +83,7 @@ def optimize_inside_sim(file_name, mode, tensor_data):
     _, _, _, lowest_cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0)
     print(f"Optimize {data_file} (starting cost: {lowest_cost})")
 
-    num_iterations = 2
+    num_iterations = 1
     index_range = 4
 
     # Define the discrete torque levels
@@ -145,19 +145,19 @@ def optimize_inside_sim(file_name, mode, tensor_data):
             break
 
     # Optionally, plot the torque adjustments
-    if mode == 'optimize':
-        # Plot the original torque data with the adjusted torque
-        original_torque = np.array([row[1] for row in original_data])
-        adjusted_torque = np.array([row[1] for row in tensor_data])
-        plot_adjusted_vs_original_torque(original_torque, adjusted_torque)
+    # if mode == 'optimize':
+    #     # Plot the original torque data with the adjusted torque
+    #     original_torque = np.array([row[1] for row in original_data])
+    #     adjusted_torque = np.array([row[1] for row in tensor_data])
+    #     plot_adjusted_vs_original_torque(original_torque, adjusted_torque)
 
-def optimize_simulations(mode='print'):
+def optimize_simulations(mode='print', file_offset=0):
     # Ensure the solved directory exists
     if not os.path.exists(solved_dir):
         os.makedirs(solved_dir)
 
     # Loop through each file in the simulations directory
-    for filename in sorted(os.listdir(simulations_dir)):
+    for filename in sorted(os.listdir(simulations_dir))[file_offset:]:
         if filename.endswith('.npy'):  # Assuming tensors are saved with a .pt extension
             file_path = os.path.join(simulations_dir, filename)
             solved_path = os.path.join(solved_dir, filename)
@@ -177,7 +177,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Optimize or print simulation data.")
     parser.add_argument('--mode', type=str, default='print', choices=['print', 'optimize'],
                         help="Mode: 'print' to display ratios and predictions, 'optimize' to save optimized tensors.")
+    parser.add_argument('--file_offset', type=int, default=0,
+                        help="File Offset: offset the starting file index.")
     args = parser.parse_args()
 
     # Run the optimization script
-    optimize_simulations(args.mode)
+    optimize_simulations(args.mode, args.file_offset)

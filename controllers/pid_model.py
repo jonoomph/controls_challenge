@@ -38,25 +38,6 @@ class Controller(BaseController):
         """ Normalize the vehicle's speed for model input. """
         return v_ego_m_s / 40.0
 
-    def predict_best_torque(self, best_action, tolerance=5.0, min_torque=-2.5, max_torque=2.5):
-        action_torque = best_action[0][0]
-        mean_diff = np.mean(best_action[0][1:])
-
-        if abs(mean_diff) < tolerance:
-            return action_torque
-
-        # Proportional gain (tune this value)
-        Kp = 0.09
-
-        # Adjust torque proportionally to mean_diff
-        adjustment = Kp * mean_diff
-        new_torque = action_torque - adjustment
-
-        # Ensure new_torque stays within valid bounds
-        new_torque = np.clip(new_torque, min_torque, max_torque)
-
-        return new_torque
-
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         """
         Update the control signal based on the current state and future plan.
@@ -93,8 +74,7 @@ class Controller(BaseController):
         control_signal = 0
         if len(self.input_window) >= self.window_size: # and self.step_idx >= 93:
             input_tensor = np.array(self.input_window[-self.window_size:]).reshape(1, self.window_size, -1)
-            control_output = self.ort_session.run(None, {'input': input_tensor})[0]
-            control_signal = self.predict_best_torque(control_output)
+            control_signal = self.ort_session.run(None, {'input': input_tensor})[0][0,0]
 
         # Override initial steer values
         if not math.isnan(steer):

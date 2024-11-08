@@ -2,8 +2,6 @@ import math
 import os
 import random
 from pathlib import Path
-import pandas as pd
-from scipy.stats import linregress
 import torch
 
 import tinyphysics
@@ -26,8 +24,8 @@ class Controller:
         self.steer_window = []
         self.lataccel_window = []
 
-    def store_transition(self, state, action, future):
-        self.replay_buffer.append((state, action, future))
+    def store_transition(self, state, action):
+        self.replay_buffer.append((state, action))
 
     def average(self, values):
         if len(values) == 0:
@@ -37,31 +35,6 @@ class Controller:
     def normalize_v_ego(self, v_ego_m_s):
         max_m_s = 40.0
         return v_ego_m_s / max_m_s
-
-    def calculate_median_r2(self, torque, lataccel, window_size=22):
-        """ Calculate the median R² and slope from the sliding window of data. """
-        self.steer_window.append(torque)
-        self.lataccel_window.append(lataccel)
-
-        # Keep windows within size limits
-        if len(self.steer_window) > window_size:
-            self.steer_window.pop(0)
-        if len(self.lataccel_window) > window_size:
-            self.lataccel_window.pop(0)
-
-        # Calculate and print median R² if window is ready
-        if len(self.steer_window) >= window_size:
-            # Perform linear regression on the sliding window data
-            steer_command = pd.Series(self.steer_window)
-            lat_accel = pd.Series(self.lataccel_window)
-
-            # Calculate the slope and R² (correlation and regression)
-            try:
-                slope, intercept, r_value, p_value, std_err = linregress(steer_command, lat_accel)
-                return r_value**2, slope
-            except ValueError:
-                pass
-        return 0, 0
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global SIM
@@ -80,9 +53,6 @@ class Controller:
         if len(self.prev_actions) > 0:
             previous_action = self.prev_actions[-1]
 
-        # Append values to sliding windows for steer and target lateral acceleration
-        r2, slope = self.calculate_median_r2(previous_action, current_lataccel)
-
         # Flatten the differences into a single list
         state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['v_ego'] + diff_values['a_ego'] + [previous_action])
 
@@ -90,27 +60,17 @@ class Controller:
         state_input = torch.tensor(state_input_list, dtype=torch.float32).unsqueeze(0)
 
         # Get action from controller
-        action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan)
+        action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan, steer)
 
         # Override initial steer commands
         if not math.isnan(steer):
             action = steer
         else:
             # Store transition in the replay buffer
-            self.store_transition(state_input, action, diff_values['lataccel'])
+            self.store_transition(state_input, action)
 
         self.prev_actions.append(action)
         return action
-
-
-def safe_float(value):
-    try:
-        # Try converting the value to float
-        return float(value)
-    except ValueError:
-        # If conversion fails (e.g., NaN or empty), return None
-        return None
-
 
 def get_random_files(folder_path, num_files=1, seed=1):
     # Set the seed for repeatability
@@ -134,7 +94,7 @@ def start_training(num_files=99, threshold=0.9):
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
 
     # Get random files
-    file_list = get_random_files('../data/', num_files=num_files, seed=1979)
+    file_list = get_random_files('../data-optimized/', num_files=num_files, seed=1979)
 
     for epoch in range(EPOCHS):
         for file_name in file_list:
@@ -164,7 +124,7 @@ def start_training(num_files=99, threshold=0.9):
                 print(f"Removing level {level_num:05d}. Score is worse than PID: {scores}")
                 os.unlink(f'simulations/{level_num:05d}.pth')
 
-    print("Training completed!")
+    print("Simulations saved!")
 
 
 if __name__ == "__main__":

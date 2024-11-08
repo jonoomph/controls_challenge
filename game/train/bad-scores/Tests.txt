@@ -267,8 +267,6 @@
     SIMULATIONS
     - Random 20 files (seed 1979): 47: test	0.972	14.976	63.593
     - Update lr=5e-04: test	0.949	15.636	63.109
-    - Update lr=1.5e-04, seed 962:
-    - Random 15 files (seed 42):
     - ONLY files 20% better than PID scores: test	0.968	15.188	63.603
     - ONLY files 15% better than PID scores: test	0.975	15.392	64.165
     - ONLY files 10% better than PID scores: test	0.923	15.556	61.714
@@ -297,4 +295,11 @@
     24: test	1.441	17.665	89.739 (5000 tests, bad score)
 
     OPTIMIZER for LEVEL DATA
-    2: Improved total cost from 95.93814630552095 to 72.61961958909242
+    00002: Improved total cost from 95.93814630552095 to 72.61961958909242 (3 indexes in each direction, 1 iteration)
+    00002: Improved total cost from 95.93814630552095 to 70.719230186088 (4 indexes in each direction, 1 iteration)
+    Starting full optimizer run: 1:25 PM (34 minutes per file x 41 files == 25 hours)
+    34: test	1.216	14.977	75.755 (8 optimized files, 100 tests, lr=0.0001)
+    54: test	0.919	16.493	62.467 (25 optimized files, 100 tests, lr=0.0001)
+    29: test	0.967	14.894	63.265 (31 optimized files, 100 tests, lr=0.00005)
+    X:  (56 optimized files, 100 tests, lr=0.000085)
+

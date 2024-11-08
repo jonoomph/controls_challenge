@@ -41,7 +41,7 @@ class TrainingRun:
 
             # Stack the predictions and solved data
             predictions_tensor = torch.cat(shuffled_predictions)
-            solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32)
+            solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32).unsqueeze(1)
 
             # Calculate loss
             loss = self.loss_fn(predictions_tensor, solved_tensor)
@@ -58,10 +58,10 @@ class TrainingRun:
             # Log the loss
             self.total_loss += loss.item()
 
-    def train(self, state_input, steer_torque, future_diffs, diff_threshold=0.1):
+    def train(self, state_input, steer_torque, diff_threshold=0.1):
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
-        self.output_window.append([steer_torque] + future_diffs)
+        self.output_window.append(steer_torque)
 
         # Process only if we have enough data for one window
         if len(self.input_window) >= self.window_size:
@@ -210,8 +210,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 for row in tensor_data_subset:
                     input_tensor = row[0]
                     steer_torque = row[1]
-                    future_diffs = row[2]
-                    run.train(input_tensor, steer_torque, future_diffs, diff_threshold=diff_thresholds[epoch])
+                    run.train(input_tensor, steer_torque)
 
                 # Add loss
                 epoch_loss += run.total_loss
@@ -265,6 +264,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=80, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00004, seed=962)
+    loss = start_training(epochs=65, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.000085, seed=962)
     print(loss)
 
