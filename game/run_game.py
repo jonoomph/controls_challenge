@@ -1,10 +1,10 @@
 import tinyphysics
 from tinyphysics import CONTEXT_LENGTH
-from controllers import BaseController, pid, replay
+from controllers import BaseController, pid, replay, pid_top
 from draw_game import *
 import numpy as np
 
-LEVEL_IDX = 11
+LEVEL_IDX = 13
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
@@ -64,7 +64,7 @@ class Controller(BaseController):
     def __init__(self, level):
         super().__init__()
         self.level = level
-        self.internal_pid = pid.Controller()
+        self.internal_pid = pid_top.Controller()
         self.internal_replay = replay.Controller(level)
         self.torques = []
         self.lat_accel_cost = 0
@@ -113,8 +113,8 @@ class Controller(BaseController):
         future_lataccel = target_lataccel
         if len(future_plan.lataccel) >= 5:
             future_lataccel = future_plan.lataccel[4] # Use future target lataccel (if available)
-        pid_action = self.internal_pid.update(future_lataccel, current_lataccel, state, future_plan)
-        replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan)
+        pid_action = self.internal_pid.update(future_lataccel, current_lataccel, state, future_plan, steer)
+        replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan, steer)
 
         # Determine position on road and SIM index
         index = len(self.torques)

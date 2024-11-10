@@ -83,8 +83,8 @@ def optimize_inside_sim(file_name, mode, tensor_data):
     _, _, _, lowest_cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0)
     print(f"Optimize {data_file} (starting cost: {lowest_cost})")
 
-    num_iterations = 1
-    index_range = 4
+    num_iterations = 3
+    index_range = 6
 
     # Define the discrete torque levels
     torques = np.linspace(-2.5, 2.5, 256)

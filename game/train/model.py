@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class PIDControllerNet(nn.Module):
-    def __init__(self, hidden_size=85, num_layers=2, window_size=7, input_size=25):
+    def __init__(self, hidden_size=85, num_layers=2, window_size=7, input_size=15):
         super(PIDControllerNet, self).__init__()
         self.window_size = window_size
         self.hidden_size = hidden_size

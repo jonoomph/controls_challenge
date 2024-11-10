@@ -34,27 +34,30 @@ class Controller:
 
     def normalize_v_ego(self, v_ego_m_s):
         max_m_s = 40.0
-        return v_ego_m_s / max_m_s
+        v_ego_m_s = max(0, v_ego_m_s)  # Sets negative values to 0
+        return math.sqrt(v_ego_m_s) / math.sqrt(max_m_s)
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         global SIM
 
         # Compute the differences from the current state for each segment
-        future_segments = [(0, 1), (1, 3), (2, 5), (5, 9), (9, 14), (14, 20)]
+        future_segments = [(0, 1), (1, 3), (2, 5)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
             'v_ego': [self.normalize_v_ego(state.v_ego) - self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
             'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
+            'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) -
+                                                  self.average(future_plan.roll_lataccel[start:end])) for start, end in future_segments],
         }
 
         # Previous steering torque
-        previous_action = 0
-        if len(self.prev_actions) > 0:
-            previous_action = self.prev_actions[-1]
+        previous_action = [0, 0, 0]
+        if len(self.prev_actions) >= 3:
+            previous_action = self.prev_actions[-3:]
 
         # Flatten the differences into a single list
-        state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['v_ego'] + diff_values['a_ego'] + [previous_action])
+        state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['a_ego'] + diff_values['v_ego'] + previous_action)
 
         # Prepare the state as input for the model
         state_input = torch.tensor(state_input_list, dtype=torch.float32).unsqueeze(0)
@@ -89,7 +92,7 @@ def get_random_files(folder_path, num_files=1, seed=1):
     return sampled_files
 
 
-def start_training(num_files=99, threshold=0.9):
+def start_training(num_files=99, threshold=1.0):
     global SIM
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
 

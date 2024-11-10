@@ -9,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-SLhIh-24.onnx"):
+    def __init__(self, window_size=34, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-nuNGD-60.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -35,8 +35,9 @@ class Controller(BaseController):
         return sum(values) / len(values) if values else 0
 
     def normalize_v_ego(self, v_ego_m_s):
-        """ Normalize the vehicle's speed for model input. """
-        return v_ego_m_s / 40.0
+        max_m_s = 40.0
+        v_ego_m_s = max(0, v_ego_m_s)  # Sets negative values to 0
+        return math.sqrt(v_ego_m_s) / math.sqrt(max_m_s)
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
         """
@@ -52,20 +53,23 @@ class Controller(BaseController):
             float: Control signal for steering.
         """
         # Calculate differences for future segments
-        future_segments = [(0, 1), (1, 3), (2, 5), (5, 9), (9, 14), (14, 20)]
+        future_segments = [(0, 1), (1, 3), (2, 5),]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
             'v_ego': [self.normalize_v_ego(state.v_ego) - self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
             'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
+            'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) - self.average(
+                future_plan.roll_lataccel[start:end])) for start, end in future_segments],
         }
 
         # Prepare state input for the model
-        previous_action = self.prev_actions[-1] if self.prev_actions else 0
+        # Previous steering torque
+        previous_action = [0, 0, 0]
+        if len(self.prev_actions) >= 3:
+            previous_action = self.prev_actions[-3:]
 
-        state_input = np.array(
-            diff_values['lataccel'] + diff_values['roll'] + diff_values['v_ego'] + diff_values['a_ego'] +
-            [previous_action], dtype=np.float32)
+        state_input = np.array(diff_values['lataccel'] + diff_values['roll'] + diff_values['a_ego'] + diff_values['v_ego'] + previous_action, dtype=np.float32)
 
         # Update time-series window
         self.input_window.append(state_input)

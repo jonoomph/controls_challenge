@@ -301,5 +301,35 @@
     34: test	1.216	14.977	75.755 (8 optimized files, 100 tests, lr=0.0001)
     54: test	0.919	16.493	62.467 (25 optimized files, 100 tests, lr=0.0001)
     29: test	0.967	14.894	63.265 (31 optimized files, 100 tests, lr=0.00005)
-    X:  (56 optimized files, 100 tests, lr=0.000085)
+    X:  (56 optimized files, 100 tests, lr=0.000085 - unstable LR)
+    31: test	0.998	14.741	64.629 (56 optimized files, 100 tests, lr=0.00004)
+    57: test	0.936	14.960	61.775 (56 optimized files, 100 tests, lr=0.00002)
 
+    ADDING WORST LEVELS (in 100 tests)
+    00033 00026, 00069, 00051, 00089
+    40: test	0.931	14.650	61.205 (63 optimized files, lr=0.00002)
+    80: test	0.910	14.772	60.295 (63 optimized files, lr=0.00001 - slow LR)
+    60: test	0.931	14.730	61.291 (63 optimized files, lr=0.000015, 2nd optimization of lvl 26)
+
+    UPDATE NN to 100, 128
+    90: test	0.929	15.032	61.457 (NN 100, lr=0.00001 - slow to train)
+    82: test	0.931	14.928	61.476 (NN 100, lr=0.0000125 - no real improvement)
+
+    REOPTIMIZE 8335, 7283, NN back to 85 size, lr=00001
+    100: test	0.921	14.918	60.980 (lr=0.00001 - slow to train)
+    100: test	1.084	15.456	69.654 (5000 tests - best score yet)
+
+    4 WORST SCORES (5000 tests): 01805.csv, 00633.csv, 04744.csv, 01716.csv, 00432.csv
+    PLUS: 03001.csv solved with pid_top PID. ALL 6 new levels optimized multiple times.
+    PLUS: Less future ranges: [(0, 1), (1, 3), (2, 5), (5, 9)], remove a_ego segments - 13 INPUTS
+    X: test	0.846	14.877	57.163 (100 tests, lr=0.00001)
+    X: test	0.938	15.586	62.500 (5000 tests, lr=0.00001 - NEW HIGH SCORE!!!!! +5.337)
+    X: (lr=0.00001, added lataccel w/roll adjustment, back to 17 inputs - no improvement)
+    53: test	0.794	15.589	55.293 (100 tests, lr=0.00001, less future ranges: [(0, 1), (1, 3), (2, 5)], +3 prev actions = 15 inputs)
+    53: test	0.864	16.629	59.824 (5000 tests - NEW HIGH SCORE!!!!! +4.531)
+    59: test	0.786	15.502	54.824 (100 tests)
+    60: test	0.784	15.496	54.703 (100 tests)
+    60: test	0.783	15.484	54.657 (100 tests, 34 window size)
+    60: test	0.864	16.604	59.781 (5000 tests, 34 window size)
+
+    WORST SCORES (5000 tests): 4743, 4744, 3166, 2894, 2531, 1269, 4959
