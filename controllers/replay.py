@@ -15,7 +15,7 @@ class Controller(BaseController):
         elif os.path.exists(level_file_path[1]):
             self.torques = np.load(level_file_path[1])
         else:
-            self.torques = np.zeros(580)
+            self.torques = np.zeros(581)
         self.step_idx = 19
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer=None):

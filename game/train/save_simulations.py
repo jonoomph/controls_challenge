@@ -1,16 +1,75 @@
-import math
 import os
+import math
 import random
+from collections import defaultdict
 from pathlib import Path
 import torch
+import matplotlib.pyplot as plt
+plt.interactive(False)
 
 import tinyphysics
-from controllers import replay, pid
+from controllers import replay, pid, pid_top, pid_future, pid_w_ff
 
 SIM = None
 EPOCHS = 1
 DATAFILES_START = 0
 model_path = Path('../../models/tinyphysics.onnx')
+
+
+def graph_data(results, rows_per_plot=4):
+    """
+    Create comparison plots for the top two controllers per file.
+    Each row corresponds to one simulation file, with two columns:
+    - Left: Lateral acceleration differences
+    - Right: Steering outputs
+    """
+    files = list(results.keys())
+    num_files = len(files)
+    num_plots = math.ceil(num_files / rows_per_plot)
+
+    for plot_idx in range(num_plots):
+        fig, axes = plt.subplots(rows_per_plot, 2, figsize=(12, 3 * rows_per_plot))
+        axes = axes.reshape(rows_per_plot, 2)  # Ensure grid shape consistency
+
+        for row_idx, file_idx in enumerate(range(plot_idx * rows_per_plot, min((plot_idx + 1) * rows_per_plot, num_files))):
+            file_name = files[file_idx]
+            data = results[file_name]
+
+            # Get the top two controllers based on cost
+            sorted_scores = sorted(data["scores"].items(), key=lambda x: x[1])
+            top_controllers = sorted_scores[:2]
+
+            # Extract controller names and replay buffers for only the top 2 controllers
+            controller1_name, controller1_data = top_controllers[0][0], data["buffers"][top_controllers[0][0]]
+            controller2_name, controller2_data = top_controllers[1][0], data["buffers"][top_controllers[1][0]]
+
+            # Extract lateral acceleration differences and steering outputs for top 2 controllers
+            lataccel_diffs1 = [state[0] for state, _ in controller1_data]
+            lataccel_diffs2 = [state[0] for state, _ in controller2_data]
+            steer_outputs1 = [action for _, action in controller1_data]
+            steer_outputs2 = [action for _, action in controller2_data]
+
+            # Left column: Plot lateral acceleration differences for top 2 controllers
+            ax = axes[row_idx, 0]
+            ax.plot(lataccel_diffs1, label=f"{controller1_name}")
+            ax.plot(lataccel_diffs2, label=f"{controller2_name}")
+            ax.set_title(f"File: {file_name} - Lat Accel Diff")
+            ax.set_xlabel("Time")
+            ax.set_ylabel("Lateral Accel Diff")
+            ax.legend()
+
+            # Right column: Plot steering outputs for top 2 controllers
+            ax = axes[row_idx, 1]
+            ax.plot(steer_outputs1, label=f"{controller1_name}")
+            ax.plot(steer_outputs2, label=f"{controller2_name}")
+            ax.set_title(f"File: {file_name} - Steering Outputs")
+            ax.set_xlabel("Time")
+            ax.set_ylabel("Steering")
+            ax.legend()
+
+        #plt.tight_layout()
+        plt.show()
+
 
 
 class Controller:
@@ -45,7 +104,7 @@ class Controller:
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
-            'v_ego': [self.normalize_v_ego(state.v_ego) - self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
+            'v_ego': [self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
             'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
             'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) -
                                                   self.average(future_plan.roll_lataccel[start:end])) for start, end in future_segments],
@@ -91,7 +150,6 @@ def get_random_files(folder_path, num_files=1, seed=1):
 
     return sampled_files
 
-
 def start_training(num_files=99, threshold=1.0):
     global SIM
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
@@ -99,35 +157,78 @@ def start_training(num_files=99, threshold=1.0):
     # Get random files
     file_list = get_random_files('../data-optimized/', num_files=num_files, seed=1979)
 
+    # Append missing levels
+    for missing_level in [2589, 3001, 2580, 432, 4772, 1954, 1550, 2618, 739, 1483, 3385, 660, 3079, 367, 2898, 4686, 4877, 2879, 1202, 699,
+                          4959, 4743, 4744, 3166, 2732, 3712, 1722, 4620, 3163, 2531, 3917, 3132, 1193, 264, 2105, 4803, 526, 2684, 1805, 2108 ]:
+        file_list.append(f"{missing_level:05}.npy")
+
+    results = defaultdict(dict)
+    win_counts = defaultdict(int)
+
     for epoch in range(EPOCHS):
         for file_name in file_list:
             level_num = int(os.path.splitext(file_name)[0])
             data_path = os.path.join('../../data/', f'{level_num:05}.csv')
 
+            # Dictionary to store scores and replay buffers
             scores = {}
-            for controller_name, internal_controller in [("PIDReplay", replay.Controller(level_num=level_num)), ("PID", pid.Controller())]:
-                # Create simulator
-                SIM = tinyphysics.TinyPhysicsSimulator(tinyphysicsmodel, str(data_path), controller=Controller(epoch, internal_controller), debug=False)
+            replay_buffers = {}
 
-                # Iterate through data rows (where steering was active)
-                SIM.rollout()
+            # Run simulations with each controller and store scores
+            for controller_name, internal_controller in [
+                ("PID-REPLAY", replay.Controller(level_num=level_num)),
+                ("PID-TOP", pid_top.Controller()),
+                ("PID-FF", pid_w_ff.Controller()),
+                ("PID-FUTURE", pid_future.Controller()),
+                ("PID", pid.Controller())
+            ]:
+                # Create simulator with the specific controller
+                sim = tinyphysics.TinyPhysicsSimulator(
+                    tinyphysicsmodel, str(data_path),
+                    controller=Controller(epoch, internal_controller),
+                    debug=False
+                )
 
-                # Save model data
-                cost = SIM.compute_cost()
+                # Run the simulation and calculate the cost
+                sim.rollout()
+                cost = sim.compute_cost()
                 scores[controller_name] = cost["total_cost"]
+                replay_buffers[controller_name] = sim.controller.replay_buffer
 
-                if controller_name == "PIDReplay":
-                    model_data = SIM.controller.replay_buffer
-                    print(f'Saving Model: {level_num:05d}', cost["total_cost"])
-                    torch.save(model_data, f'simulations/{level_num:05d}.pth')
+            # Determine the best controller
+            best_controller_name = min(scores, key=scores.get)
+            best_score = scores[best_controller_name]
+            best_model_data = replay_buffers[best_controller_name]
 
-            # Don't keep bad SIM data
-            #if scores["PIDReplay"] - scores["PID"] > threshold:
-            if scores["PIDReplay"] > scores["PID"] * threshold:
-                print(f"Removing level {level_num:05d}. Score is worse than PID: {scores}")
-                os.unlink(f'simulations/{level_num:05d}.pth')
+            # Save the best controller's data
+            save_path = f'simulations-combined/{level_num:05d}-{best_controller_name}.pth'
+            torch.save(best_model_data, save_path)
 
-    print("Simulations saved!")
+            # Also save PID-REPLAY (if close to best score)
+            # replay_controller_name = "PID-REPLAY"
+            # if best_controller_name != replay_controller_name and abs(scores[best_controller_name] - scores[replay_controller_name]) < 10.0:
+            #     save_path = f'simulations-combined/{level_num:05d}-{replay_controller_name}.pth'
+            #     torch.save(replay_buffers[replay_controller_name], save_path)
+            #     win_counts[replay_controller_name] += 1
+
+            # Update win counts
+            win_counts[best_controller_name] += 1
+
+            # Save data for plotting
+            results[file_name] = {"scores": scores, "buffers": replay_buffers}
+
+            # Output the score comparison
+            score_diffs = [f"{name}: {scores[name] - best_score:+.1f}" for name in scores if name != best_controller_name]
+            score_output = f"{level_num:05d}: {best_controller_name} : {best_score:.1f} cost ({', '.join(score_diffs)})"
+            print(score_output)
+
+    # Final breakdown of wins per controller
+    print("\nFinal Summary: Number of Wins per Controller")
+    for controller_name, count in win_counts.items():
+        print(f"{controller_name}: {count} wins")
+
+    # Plot the data
+    #graph_data(results)
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ class Controller(BaseController):
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
-            'v_ego': [self.normalize_v_ego(state.v_ego) - self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
+            'v_ego': [self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
             'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
             'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) - self.average(
                 future_plan.roll_lataccel[start:end])) for start, end in future_segments],

@@ -58,7 +58,7 @@ class TrainingRun:
             # Log the loss
             self.total_loss += loss.item()
 
-    def train(self, state_input, steer_torque, diff_threshold=0.1):
+    def train(self, state_input, steer_torque, diff_threshold=0.075):
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
         self.output_window.append(steer_torque)
@@ -125,7 +125,7 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, optimize
 
 
 EXPORT_INTERVAL = 5
-simulations_dir = "./simulations/"
+simulations_dir = "./simulations-combined/"
 
 
 def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001, loss_fn=nn.MSELoss(), seed=2002):
@@ -264,6 +264,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=150, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00001, seed=962)
+    loss = start_training(epochs=65, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00001, seed=962)
     print(loss)
 

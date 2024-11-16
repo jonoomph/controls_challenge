@@ -332,4 +332,63 @@
     60: test	0.783	15.484	54.657 (100 tests, 34 window size)
     60: test	0.864	16.604	59.781 (5000 tests, 34 window size)
 
-    WORST SCORES (5000 tests): 4743, 4744, 3166, 2894, 2531, 1269, 4959
+    MORE OPTIMIZED SIMULATIONS
+    57: (14 optimized, 100 tests)
+    57: (14 optimized, 5000 tests)
+
+    MADE v_ego and a_ego not subtract current state, removed 04744
+    - test	0.762	15.839	53.941 (100 tests)
+    - test	0.853	16.708	59.366 (5000 tests, NEW HIGH SCORE!!!!! +5.425)
+
+    OPTIMIZED 38 total files
+    50: test	0.766	15.745	54.052 (100 tests - tiny improvement on 100 tests)
+
+    PLOTTED MISSING LEVELS: 1883, 4874, 3277, 2546, 367, 1459, 3533, 1830, 2429, 4853, 739, 3281, 3727, 3546, 740, 2684, 1961, 319, 1793, 3873, 1654, 575, 387, 4649, 1487
+    46: test	0.805	15.426	55.677 (10 new levels, 100 tests, a little worse on all tests)
+
+    COMBINED SIMULATIONS (44 PID-REPLAY + 36 PID-TOP)
+    45: test	0.693	16.309	50.954 (100 tests)
+    46: test	0.690	16.319	50.830 (100 tests)
+    46: test	0.747	17.737	55.089 (5000 tests, NEW HIGH SCORE!!!!! +4.259)
+
+    MADE v_ego and a_ego not subtract current state (a small improvement)
+    48: test	0.679	16.426	50.352 (100 tests)
+    48: Average Cost: 50.7170 (200 tests - ran test_models on 200 tests)
+    48: test	0.758	17.927	55.849 (5000 tests, +5.497)
+    43: test	0.761	17.995	56.049 (5000 tests, lowest test score in 20 tests)
+
+    MADE only v_ego absolute (reverted a_ego). ADDED PID-FF. PID-TOP: 24 wins, PID-REPLAY: 39 wins, PID-FF: 17 wins
+    X: test	0.639	16.724	48.665 (100 tests, big improvement)
+    X: test	0.722	18.520	54.641 (5000 tests, NEW HIGH SCORE!!!! +5.975)
+
+    ADDED A FEW MISSING PLOT LEVELS: PID-TOP: 36 wins, PID-REPLAY: 40 wins, PID-FF: 24 wins
+    32: test	0.619	17.150	48.092 (100 tests)
+    33: test	0.619	17.107	48.048 (100 tests)
+
+    ADDED 20 HIGHEST SCORES FROM CSV (PID-TOP: 40 wins, PID-REPLAY: 42 wins, PID-FF: 37 wins, PID: 1 wins), W/ 0.08 filtering
+    45: test	0.630	17.083	48.559 (100 tests, test score plots slightly worse)
+    45: test	0.682	18.372	52.459 (5000 tests, NEW HIGH SCORE!!! +3.9)
+    60: test	0.633	17.055	48.705 (0.07 filtering, lower LR: 0.000009, 100 tests, slightly worse)
+    42: test	0.624	17.101	48.303 (0.09 filtering, 100 tests, slightly better)
+    42: test	0.652	17.717	50.301 (300 tests)
+    50: test	0.699	17.930	52.862 (300 tests)
+    42: test	0.689	18.688	53.142 (0.09 filtering, 5000 tests)
+
+    UPDATING SAVE SIMULATIONS (ALSO SAVE CLOSE REPLAYS)
+    WORST SCORES: 4959, 4744, 3166, 1722, 2531, 1193, 4803
+    - 04959: PID : 2502.9 cost (PID-REPLAY: +2427.4, PID-TOP: +899.3, PID-FF: +1455.7, PID-FUTURE: +11481.2)
+    - 04744: PID-REPLAY : 668.3 cost (PID-TOP: +1085.9, PID-FF: +4904.8, PID-FUTURE: +53361.2, PID: +3889.9)
+    - 03166: PID-TOP : 565.7 cost (PID-REPLAY: +20787.1, PID-FF: +114.7, PID-FUTURE: +5845.3, PID: +1279.2)
+    - 01722: PID-FF : 640.5 cost (PID-REPLAY: +11295.4, PID-TOP: +160.6, PID-FUTURE: +17406.9, PID: +2084.7)
+    - 02531: PID-FF : 785.9 cost (PID-REPLAY: +13442.0, PID-TOP: +246.0, PID-FUTURE: +88002.3, PID: +3143.2)
+    - 01193: PID-FF : 410.5 cost (PID-REPLAY: +9961.2, PID-TOP: +224.7, PID-FUTURE: +56317.8, PID: +1623.6)
+    - 04803: PID-FF : 541.4 cost (PID-REPLAY: +8318.7, PID-TOP: +168.9, PID-FUTURE: +5655.7, PID: +1705.8)
+    TOTAL LEVELS: 138 SIMULATIONS: PID-TOP: 39 wins, PID-REPLAY: 80 wins, PID-FF: 33 wins
+    43: test	0.639	17.045	48.977 (100 tests, 0.075 filter)
+    43: test	0.687	18.369	52.708 (5000 tests)
+    24: test	0.642	16.754	48.865 (100 tests, no filter)
+    24: test	0.743	18.676	55.819 (5000 tests, no filter, also with close replays)
+
+    NO CLOSE REPLAYS (PID-TOP: 39 wins, PID-REPLAY: 54 wins, PID-FF: 33 wins)
+    X: test	0.626	16.937	48.217 (100 tests, NO FILTER)
+    X: test	0.706	18.602	53.882 (5000 tests, NO FILTER)

@@ -1,5 +1,6 @@
 from . import BaseController
 import numpy as np
+import math
 from scipy.interpolate import CubicSpline
 
 
@@ -48,7 +49,7 @@ class Controller(BaseController):
         # self.rounded_pid_diff = new_action_diff  # Remove or comment out this line
         self.prev_action += new_action_diff
 
-    def update(self, target_lataccel, current_lataccel, state, future_plan):
+    def update(self, target_lataccel, current_lataccel, state, future_plan, steer=math.inf):
         # Predictive adjustment using future plan data
         predicted_lataccel = self.weighted_future_lataccel(future_plan)
 

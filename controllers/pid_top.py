@@ -1,3 +1,4 @@
+# https://github.com/YashDYD/COMMA.AI-CONTROLS/blob/main/pid2_0.py
 from . import BaseController
 import numpy as np
 import math
@@ -62,7 +63,3 @@ class Controller(BaseController):
         u_ff = 0.8 * steer_command
 
         return np.clip(u_pid + u_ff, -2, 2)
-
-# Example of how to call the optimizer
-# controller = Controller()
-# controller.optimize_parameters('./data/00000.csv', './models/tinyphysics.onnx')
