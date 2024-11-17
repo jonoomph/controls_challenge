@@ -24,44 +24,55 @@ class TrainingRun:
         self.total_loss = 0
         self.predictions = []
         self.solved = []
+        self.steer_costs = []
         self.window_size = window_size
         self.input_window = []
         self.output_window = []
+        self.cost_window = []
         self.batch_size = batch_size
         self.optimizer = optimizer
         self.model = model
         self.loss_fn = loss_fn
 
-    def process_batch(self):
+    def process_batch(self, steer_cost_min=-4.0, steer_cost_max=1.0, k=2.0):
         if len(self.predictions) >= self.batch_size:
             # Shuffle the batch
-            combined = list(zip(self.predictions, self.solved))
+            combined = list(zip(self.predictions, self.solved, self.steer_costs))
             random.shuffle(combined)
-            shuffled_predictions, shuffled_solved = zip(*combined)
+            shuffled_predictions, shuffled_solved, shuffled_costs = zip(*combined)
 
-            # Stack the predictions and solved data
+            # Stack the predictions, solved data, and costs
             predictions_tensor = torch.cat(shuffled_predictions)
             solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32).unsqueeze(1)
+            steer_cost_tensor = torch.tensor(shuffled_costs, dtype=torch.float32).unsqueeze(1)
 
-            # Calculate loss
-            loss = self.loss_fn(predictions_tensor, solved_tensor)
+            # Clamp steer costs to the specified range
+            steer_cost_tensor = torch.clamp(steer_cost_tensor, min=steer_cost_min, max=steer_cost_max)
+
+            # Linearly flip weights so -3.0 → 1.0, 1.0 → 0.0
+            weight_tensor = 1.0 - (steer_cost_tensor - steer_cost_min) / (steer_cost_max - steer_cost_min)
+
+            # Apply the weights to the loss
+            weighted_loss = (self.loss_fn(predictions_tensor, solved_tensor) * weight_tensor).mean()
 
             # Backpropagation: clear the gradients, perform backpropagation, and update the weights
             self.optimizer.zero_grad()
-            loss.backward()
+            weighted_loss.backward()
             self.optimizer.step()
 
             # Clear the lists for the next batch
             self.predictions.clear()
             self.solved.clear()
+            self.steer_costs.clear()
 
             # Log the loss
-            self.total_loss += loss.item()
+            self.total_loss += weighted_loss.item()
 
-    def train(self, state_input, steer_torque, diff_threshold=0.075):
+    def train(self, state_input, steer_torque, steer_cost, diff_threshold=0.075):
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
         self.output_window.append(steer_torque)
+        self.cost_window.append(steer_cost)
 
         # Process only if we have enough data for one window
         if len(self.input_window) >= self.window_size:
@@ -86,6 +97,7 @@ class TrainingRun:
             # Store the prediction and the PID output
             self.predictions.append(model_output)
             self.solved.append(self.output_window[-1])
+            self.steer_costs.append(self.cost_window[-1])
 
             # Process the batch (if needed)
             self.process_batch()
@@ -93,6 +105,7 @@ class TrainingRun:
             # Slide the window
             self.input_window.pop(0)
             self.output_window.pop(0)
+            self.cost_window.pop(0)
 
 
 def export_model(epoch=None, prefix="model", window_size=7, model=None, optimizer=None, logging=True):
@@ -125,7 +138,7 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, optimize
 
 
 EXPORT_INTERVAL = 5
-simulations_dir = "./simulations-combined/"
+simulations_dir = "./simulations/"
 
 
 def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001, loss_fn=nn.MSELoss(), seed=2002):
@@ -210,7 +223,8 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 for row in tensor_data_subset:
                     input_tensor = row[0]
                     steer_torque = row[1]
-                    run.train(input_tensor, steer_torque)
+                    steer_cost = row[2]
+                    run.train(input_tensor, steer_torque, steer_cost)
 
                 # Add loss
                 epoch_loss += run.total_loss
@@ -239,9 +253,10 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 )
                 callback(epoch, cost)  # Trigger callback with results
 
-            test_thread = threading.Thread(target=threaded_testing, args=(epoch, on_testing_complete))
-            test_thread.start()
-            threads.append(test_thread)
+            if epoch > 15:
+                test_thread = threading.Thread(target=threaded_testing, args=(epoch, on_testing_complete))
+                test_thread.start()
+                threads.append(test_thread)
 
     # Ensure all threads complete before concluding training
     for t in threads:
