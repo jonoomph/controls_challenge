@@ -9,11 +9,12 @@ import matplotlib.pyplot as plt
 
 # Path to your training directory and evaluation results
 training_dir = '../data-optimized'
-training_files = [f"{os.path.splitext(file)[0]}.csv" for file in os.listdir(training_dir)]
-eval_results_path = '/home/jonathan/apps/controls_challenge/eval-52-score.csv'
+training_files = [f"{os.path.splitext(file)[0].split('-')[0]}" for file in os.listdir(training_dir)]
+eval_results_path = '/home/jonathan/apps/controls_challenge/eval-52-201-score.csv'
 
 # Load evaluation results
 eval_df = pd.read_csv(eval_results_path)
+eval_df['file'] = eval_df['file'].str.replace('.csv', '', regex=False)
 test_eval_df = eval_df[eval_df['controller'] == 'test']
 
 # Path to simulation data directory
@@ -28,7 +29,7 @@ for filename in sorted(os.listdir(data_dir))[:5000]:
 
         # Compute statistics for each drive
         drive_summary = {
-            'file': filename,
+            'file': os.path.splitext(filename)[0],
             'vEgo_mean': df['vEgo'].mean(),
             'vEgo_std': df['vEgo'].std(),
             'aEgo_mean': df['aEgo'].mean(),
@@ -61,15 +62,16 @@ summary_df['cluster'] = kmeans.fit_predict(summary_df_scaled)
 # Merge with evaluation results to analyze performance
 merged_df = pd.merge(summary_df, test_eval_df, how='left', left_on='file', right_on='file')
 merged_df['is_training'] = merged_df['file'].apply(lambda x: 1 if x in training_files else 0)
+# [(file, file in training_files) for file in merged_df['file'] ]
 
 # Identify underrepresented clusters (those not fully represented in training data)
 underrepresented_clusters = merged_df[merged_df['is_training'] == 0]['cluster'].unique()
 
 # Filter the merged_df for candidate selection: candidates above the mean score and capped at 300
-mean_score = 52
-score_cap = 150
+mean_score = 30
+score_cap = 600
 filtered_candidates = merged_df[
-    (merged_df['total_cost'] > mean_score) &
+    #(merged_df['total_cost'] > mean_score) &
     (merged_df['total_cost'] <= score_cap) &
     (merged_df['cluster'].isin(underrepresented_clusters))
     ]
@@ -81,7 +83,7 @@ final_candidates_df = filtered_candidates.groupby('cluster').apply(
 ).reset_index(drop=True)
 
 # Limit the final number of candidates to around 25, if necessary
-num_final_candidates = 10
+num_final_candidates = 30
 if len(final_candidates_df) > num_final_candidates:
     final_candidates_df = final_candidates_df.nlargest(num_final_candidates, 'total_cost')
 
@@ -89,6 +91,7 @@ if len(final_candidates_df) > num_final_candidates:
 sorted_candidates = final_candidates_df[['file', 'total_cost']].sort_values(by='total_cost', ascending=False)
 print("List of candidate files with their current model scores (sorted by highest score):")
 print(sorted_candidates)
+print([int(row) for row in sorted_candidates['file']])
 
 # Save sorted list of candidate files and scores to a CSV file for easy reference
 sorted_candidates.to_csv('../data/candidate_files_with_scores.csv', index=False)

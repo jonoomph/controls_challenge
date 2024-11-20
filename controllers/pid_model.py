@@ -9,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=34, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-nuNGD-60.onnx"):
+    def __init__(self, window_size=34, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-sUtFk-32.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 

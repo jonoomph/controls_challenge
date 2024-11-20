@@ -34,7 +34,7 @@ class TrainingRun:
         self.model = model
         self.loss_fn = loss_fn
 
-    def process_batch(self, steer_cost_min=-4.0, steer_cost_max=1.0, k=2.0):
+    def process_batch(self, steer_cost_min=-4, steer_cost_max=0.5):
         if len(self.predictions) >= self.batch_size:
             # Shuffle the batch
             combined = list(zip(self.predictions, self.solved, self.steer_costs))
@@ -68,7 +68,7 @@ class TrainingRun:
             # Log the loss
             self.total_loss += weighted_loss.item()
 
-    def train(self, state_input, steer_torque, steer_cost, diff_threshold=0.075):
+    def train(self, state_input, steer_torque, steer_cost, diff_threshold=0.08):
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
         self.output_window.append(steer_torque)
@@ -83,6 +83,14 @@ class TrainingRun:
             # avg_diff = torch.mean(torch.abs(window_tensor[:, 0, 0])).item()
             # # # Skip this window if the average difference exceeds the threshold
             # if avg_diff > diff_threshold:
+            #     # Slide the window without processing
+            #     self.input_window.pop(0)
+            #     self.output_window.pop(0)
+            #     return
+
+            # #print(torch.std(torch.tensor(self.cost_window)).item())
+            # if torch.mean(torch.abs(torch.tensor(self.cost_window))).item() > 2.0:
+            # #if torch.std(torch.tensor(self.cost_window)).item() > 0.9:
             #     # Slide the window without processing
             #     self.input_window.pop(0)
             #     self.output_window.pop(0)
@@ -218,7 +226,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 tensor_data = torch.load(file_path)
 
                 # Get the subset of data
-                tensor_data_subset = tensor_data[80:]
+                tensor_data_subset = tensor_data[80:-80]
 
                 for row in tensor_data_subset:
                     input_tensor = row[0]
@@ -253,10 +261,9 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 )
                 callback(epoch, cost)  # Trigger callback with results
 
-            if epoch > 15:
-                test_thread = threading.Thread(target=threaded_testing, args=(epoch, on_testing_complete))
-                test_thread.start()
-                threads.append(test_thread)
+            test_thread = threading.Thread(target=threaded_testing, args=(epoch, on_testing_complete))
+            test_thread.start()
+            threads.append(test_thread)
 
     # Ensure all threads complete before concluding training
     for t in threads:
@@ -279,6 +286,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 if __name__ == "__main__":
     # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    loss = start_training(epochs=65, analyze=True, logging=True, window_size=30, batch_size=44, lr=0.00001, seed=962)
+    loss = start_training(epochs=65, analyze=True, logging=True, window_size=30, batch_size=44, lr=1.5e-5, seed=962)
     print(loss)
 

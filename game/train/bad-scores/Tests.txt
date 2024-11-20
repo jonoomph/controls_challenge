@@ -417,3 +417,74 @@
     35: test	0.644	16.495	48.706 (100 tests, NN 80, dropout 0.1, no LSTM dropout - the less dropout, the better the score)
     35: test	0.641	16.618	48.665 (200 tests)
     35: test	0.710	17.885	53.406 (5000 tests)
+
+    REMOVING 4744, WEIGHTED STEER COSTS: [0.028, 0.141, 0.831] in simulations (takes 3 time steps to realize cost)
+    PID-TOP: 39 wins, PID-REPLAY: 46 wins, PID-FF: 33 wins
+    33: test	0.623	16.651	47.818 (100 tests)
+    33: test	0.622	16.812	47.907 (200 tests)
+    33: test	0.688	18.110	52.499 (5000 tests)
+    38: test	0.641	16.550	48.599 (100 tests)
+    38: test	0.644	17.052	49.236 (200 tests)
+    38: test	0.698	18.119	53.026 (5000 tests)
+
+    ADDED 15 NEW LEVEL CANDIDATES FROM PID (< 100 score): PID-TOP: 50 wins, PID-REPLAY: 46 wins, PID-FF: 37 wins
+    28: test	0.615	16.825	47.586 (100 tests)
+    28: test	0.612	17.010	47.627 (200 tests)
+    29: test	0.614	16.755	47.468 (100 tests)
+    29: test	0.613	16.968	47.623 (200 tests)
+    29: test	0.678	18.305	52.201 (5000 tests, NEW HIGH SCORE!!! +4.733)
+
+    ADDED 20 NEW LEVEL CANDIDATES FROM PID (< 80 score), use subset [80:-80]:
+    26: test	0.608	17.000	47.396 (100 tests)
+    26: test	0.608	17.162	47.541 (200 tests)
+    75: test	0.638	16.777	48.692 (100 tests)
+    75: test	0.632	17.263	48.873 (200 tests)
+    100: test	0.634	16.969	48.681 (100 tests)
+    100: test	0.630	17.589	49.064 (200 tests)
+    104: test	0.634	17.007	48.686 (100 tests)
+    104: test	0.629	17.626	49.068 (200 tests)
+
+    CLAMP & FILTER: filter seems unneeded and incompatible with clamp steer cost weighting
+    X: (clamp -0.5:+0.5 => 1.0 to 0.0, not much change)
+    28: test	0.638	17.002	48.90 (100 tests, clamp -1.5:+0.5 => 1.0 to 0.0, filter 0.08)
+    28: test	0.661	16.842	49.882 (200 tests, clamp -1.5:+0.5 => 1.0 to 0.0, filter 0.08)
+
+    ADDED 20 NEW LEVELS FROM PID (< 70 score), use subset [80:-80]
+    28: test	0.605	16.930	47.168 (100 tests, clamp -3:+0.25 => 1.0 to 0.0, filter NONE, +20 files added by epoch 4)
+    28: test	0.607	17.107	47.450 (200 tests)
+    28: test	0.680	18.575	52.589 (5000 tests +5.421)
+    22: test	0.615	17.003	47.747 (100 tests, clamped -2:1, filter NONE)
+    22: test	0.620	17.214	48.201 (200 tests)
+    21: test	0.618	17.030	47.922 (100 tests, clamped -2:2)
+    21: test	0.620	17.199	48.219 (200 tests)
+
+    ADDED 40 new levels < 60: NOTE: clamping positive steer costs smooths validation curve, lowers score
+    17: test	0.617	17.053	47.896 (100 tests, clamped -4:4)
+    17: test	0.618	17.243	48.139 (200 tests)
+    17: test	0.701	18.827	53.853 (5000 tests, +7.957)
+    X: (clamped -2:0.15, lowest 20 score: 42.9)
+    X: (clamped -4:4, lowest 20 score: 43.1)
+    X: (clamped -4:1, lowest 20 score: 42.6268)
+    X: (clamped -4:1, filter mean steer cost <= 0.1, lowest 20 score: 44.4344, lr=2e-5)
+    X: (clamped -4:1, filter std dev steer cost <= 0.7, lowest 20 score: 44.4344, lr=2e-5: std dev filtering makes validation worse)
+    X: (clamped -2:2, filter abs mean < 2, lowest 20 score: 43.62, lr=2e-5)
+    X: (clamped -4:0.5, no filters, lr=1.5e-5 - nice validation curve)
+        16: test	0.603	17.012	47.173 (100 tests)
+        16: test	0.608	17.171	47.552 (200 tests)
+        16: test	0.674	18.599	52.281 (5000 tests, +5.108)
+
+    PLAN:
+    - revert back to lowest score dataset & verify
+    - run 5000 simulation for top_pid, and ff_pid
+    - compare with model pid output
+
+    REVERTED MANY MISSING FILES, ADDED 30 NEW LEVEL CANDIDATES (cap 600 score)
+    LEVELS: PID-TOP: 34 wins, PID-REPLAY: 47 wins, PID-FF: 34 wins
+    X: test	0.594	17.172	46.856 (100 tests, clamped -4:0.5, no filters, lr=1.5e-5)
+    X: test	0.591	17.276	46.839 (200 tests)
+    X: test	0.672	18.954	52.570 (5000 tests, +5.714)
+
+    ADDED 11 WORST TOTAL SCORE COMPARED TO PIDS 5000 eval (PID-TOP: 35 wins, PID-REPLAY: 47 wins, PID-FF: 40 wins, PID: 4 wins)
+    X: test	0.591	17.105	46.647 (100 tests)
+    X: test	0.594	17.308	46.992 (200 tests)
+    X: test	0.658	18.846	51.756 (5000 tests, NEW HIGH SCORE!!!! +5.109, +3.676 points from 1st place)

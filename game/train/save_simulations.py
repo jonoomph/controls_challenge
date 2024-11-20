@@ -96,16 +96,19 @@ def get_random_files(folder_path, num_files=1, seed=1):
 
     return sampled_files
 
-def start_training(num_files=99, threshold=1.0):
+def start_training(num_files=99):
     global SIM
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
 
     # Get random files
     file_list = get_random_files('../data-optimized/', num_files=num_files, seed=1979)
 
-    # Append missing levels
-    for missing_level in [2589, 3001, 2580, 432, 4772, 1954, 1550, 2618, 739, 1483, 3385, 660, 3079, 367, 2898, 4686, 4877, 2879, 1202, 699,
-                          4743, 2732, 3712, 4620, 3163, 3917, 3132, 264, 2105, 526, 2684, 1805, 2108]:
+    # Append missing levels (PID ONLY DATA)
+    for missing_level in [2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 1387, 3712, 2931, 2894, 4661,
+                          1789, 3214, 4097, 1611, 2675, 4731, 1705, 188, 1809, 4178, 3008, 3817, 1703, 1191, 1716,
+
+                          2732, 2365, 2362, 3622, 356, 1071, 1949, 3078, 530, 779, 4486
+                          ]:
         file_list.append(f"{missing_level:05}.npy")
 
     results = defaultdict(dict)
@@ -138,16 +141,38 @@ def start_training(num_files=99, threshold=1.0):
 
                 # Run the simulation and calculate the cost
                 previous_cost = 0.0
+                cost_history = []  # Store cost history for weighted calculations
+                weights = [0.028, 0.141, 0.831]  # Influence weights for the 3 time steps
+
                 for _ in range(20, len(sim.data)):
                     sim.step()
 
                     if _ >= 101:
                         total_cost = sim.compute_cost().get('total_cost')
                         if not math.isnan(total_cost):
-                            sim.controller.replay_buffer[-1][2] = total_cost - previous_cost
-                            all_steer_costs.append(total_cost - previous_cost)
+                            # Append the current cost to the history
+                            cost_history.append(total_cost)
+
+                            # Ensure we have enough cost history for weighted diff calculation
+                            if len(cost_history) >= 4:
+                                # Calculate weighted score diff
+                                weighted_diff = sum(
+                                    weights[i] * (cost_history[-3 + i] - cost_history[-4 + i])
+                                    for i in range(3)
+                                )
+
+                                # Assign weighted diff to replay buffer (3 steps earlier)
+                                if len(sim.controller.replay_buffer) >= 3:
+                                    sim.controller.replay_buffer[-3][2] = weighted_diff
+
+                            # Append the cost diff to all_steer_costs for analysis
+                            cost_diff = total_cost - previous_cost
+                            all_steer_costs.append(cost_diff)
+
+                            # Update previous cost
                             previous_cost = total_cost
 
+                # Compute the final cost for the controller
                 cost = sim.compute_cost()
                 scores[controller_name] = cost["total_cost"]
                 replay_buffers[controller_name] = sim.controller.replay_buffer
@@ -157,7 +182,7 @@ def start_training(num_files=99, threshold=1.0):
             best_score = scores[best_controller_name]
             best_model_data = replay_buffers[best_controller_name]
 
-            # Save the best controller's data
+            # Save the best controller's replay buffer
             save_path = f'simulations/{level_num:05d}-{best_controller_name}.pth'
             torch.save(best_model_data, save_path)
 
@@ -195,8 +220,8 @@ def start_training(num_files=99, threshold=1.0):
     plt.xlabel('Steer Cost')
     plt.ylabel('Frequency')
     plt.legend()
-
-
     plt.show()
+
+
 if __name__ == "__main__":
     start_training()
