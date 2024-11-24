@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # Path to your training directory and evaluation results
 training_dir = './simulations'
 training_files = [f"{os.path.splitext(file)[0].split('-')[0]}" for file in os.listdir(training_dir)]
-eval_results_path = '/home/jonathan/apps/controls_challenge/eval-51-521-score.csv'
+eval_results_path = '/home/jonathan/apps/controls_challenge/eval-51-432-score.csv'
 
 # Load evaluation results
 eval_df = pd.read_csv(eval_results_path)
@@ -69,16 +69,16 @@ merged_df['is_training'] = merged_df['file'].apply(lambda x: 1 if x in training_
 filtered_df = merged_df.loc[merged_df['is_training'] == 0]
 
 # Define score range for candidates
-min_score = 10
-max_score = 150
-num_candidates = 80  # Total number of candidates
+min_score = 1
+max_score = 500
+num_candidates = 30
 
 # Filter out files with scores outside the range
 filtered_df = filtered_df[(filtered_df['total_cost'] >= min_score) & (filtered_df['total_cost'] <= max_score)]
 
 # Define adaptive bins based on data distribution
 # Small bins for dense areas and large bins for sparse areas
-bin_edges = [10, 20, 30, 40, 50, 60, 80, 100, 150]  # Manually defined adaptive bins
+bin_edges = [1, 10, 20, 30, 40, 50, 60, 80, 100, 500]  # Manually defined adaptive bins
 filtered_df['score_bin'] = pd.cut(filtered_df['total_cost'], bins=bin_edges, labels=False)
 
 # Compute the mean score for each bin and add it as a label

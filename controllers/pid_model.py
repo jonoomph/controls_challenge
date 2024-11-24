@@ -9,7 +9,7 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=34, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-sUtFk-32.onnx"):
+    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-vejMX-23.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -53,7 +53,7 @@ class Controller(BaseController):
             float: Control signal for steering.
         """
         # Calculate differences for future segments
-        future_segments = [(0, 1), (1, 3), (2, 5),]
+        future_segments = [(0, 1), (1, 2), (2, 3), (3, 4)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
@@ -63,11 +63,10 @@ class Controller(BaseController):
                 future_plan.roll_lataccel[start:end])) for start, end in future_segments],
         }
 
-        # Prepare state input for the model
         # Previous steering torque
-        previous_action = [0, 0, 0]
-        if len(self.prev_actions) >= 3:
-            previous_action = self.prev_actions[-3:]
+        previous_action = [0, 0, 0, 0]
+        if len(self.prev_actions) >= 4:
+            previous_action = self.prev_actions[-4:]
 
         state_input = np.array(diff_values['lataccel'] + diff_values['roll'] + diff_values['a_ego'] + diff_values['v_ego'] + previous_action, dtype=np.float32)
 

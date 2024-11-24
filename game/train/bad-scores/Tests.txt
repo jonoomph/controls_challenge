@@ -506,7 +506,6 @@
         25: test	0.581	18.357	47.394 (200 tests)
     25: test	0.569	18.119	46.580 (100 tests, average of 3 outputs)
         25: test	0.578	18.271	47.152 (200 tests)
-    25: (5000 tests)
 
     REVERT BACK before replays and optimizing (but model still has 3 steer outputs)
     22: test	0.588	18.114	47.518 (100 tests)
@@ -635,4 +634,20 @@
     54: test	0.623	17.328	48.483 (100 tests)
     54: test	0.653	18.843	51.471 (5000 tests)
 
+    EXPANDED BINS IN PLOT LEVELS: [1, 10, 20, 30, 40, 50, 60, 80, 100, 500],
+    NEW INPUT RANGES: [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)] + 5 PREV STEERS
+    REPLACED ADDED LEVELS: +26,  REPLACED TESTS: +26
+    15: test	0.642	17.263	49.378 (200 tests)
+    17: test	0.641	17.114	49.183 (200 tests)
+
+    NEW INPUT RANGES: [(0, 1), (1, 2), (2, 3), (3, 4)] + 4 PREV STEERS
+    ADDED 11 NEW LEVELS (where PID MODEL under performs PIDs)
+    23: test	0.591	17.611	47.138 (100 tests)
+    23: test	0.591	17.957	47.502 (200 tests)
+    23: test	0.643	19.263	51.416 (5000 tests +4.278)
+    36: test	0.614	17.727	48.422 (200 tests)
+    WINDOW_SIZE from 34 to 30
+    23: test	0.590	17.607	47.105 (100 tests)
+    23: test	0.587	17.914	47.266 (200 tests)
+    23:  (5000 tests)
 

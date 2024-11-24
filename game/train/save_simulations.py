@@ -46,7 +46,7 @@ class Controller:
         global SIM
 
         # Compute the differences from the current state for each segment
-        future_segments = [(0, 1), (1, 3), (2, 5)]
+        future_segments = [(0, 1), (1, 2), (2, 3), (3, 4)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
@@ -57,9 +57,9 @@ class Controller:
         }
 
         # Previous steering torque
-        previous_action = [0, 0, 0]
-        if len(self.prev_actions) >= 3:
-            previous_action = self.prev_actions[-3:]
+        previous_action = [0, 0, 0, 0]
+        if len(self.prev_actions) >= 4:
+            previous_action = self.prev_actions[-4:]
 
         # Flatten the differences into a single list
         state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['a_ego'] + diff_values['v_ego'] + previous_action)
@@ -104,15 +104,18 @@ def start_training(num_files=99):
     file_list = get_random_files('../data-optimized/', num_files=num_files, seed=1979)
 
     # Append missing levels (PID ONLY DATA)
-    for missing_level in [2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 1387, 3712, 2931, 2894, 4661,
+    for missing_level in [
+                          # ADDITIONAL LEVELS
+                          2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 1387, 3712, 2931, 2894, 4661,
                           1789, 3214, 4097, 1611, 2675, 4731, 1705, 188, 1809, 4178, 3008, 3817, 1703, 1191, 1716,
-                          2732, 2365, 2362, 3622, 356, 1071, 1949, 3078, 530, 779, 4486, 4253, 3296, 772, 779,
 
-                          3617, 19, 2251, 4132, 4883, 4562, 2642, 4699, 3531, 4317, 1462, 1496, 3797, 4280, 4523, 4423,
-                          2052, 1635, 920, 1931, 2438, 3545, 4492, 877, 393, 3774, 4191, 2204, 1658, 3498, 4750, 1468,
-                          651, 3565, 4471, 3489, 4085, 3798, 3981, 4872, 498, 3187, 4099, 2634, 439, 3603, 4989, 4546,
-                          3780, 1531, 4634, 4719, 3287, 4654, 745, 4784, 3637, 696, 2623, 2437, 1621, 4003, 196, 4811,
-                          1529, 3457, 1717, 4193, 3467, 57, 4531, 2163, 1123, 4038
+                          # UNDER PERFORMING MODEL LEVELS
+                          2732, 2365, 2362, 3622, 1071, 1949, 3078, 530, 779, 4253, 3296, 772, 779,
+                          670, 1055, 356, 4486, 4138, 1704, 1301,
+
+                          # PLOTTED LEVELS MISSING FROM DIST
+                          2675, 19, 2886, 4645, 2516, 3182, 3397, 4949, 2940, 3547, 4192, 4604, 4566, 3839, 4277,
+                          1671, 4218, 3816, 4567, 4335, 2253, 4241, 4063, 4791, 119, 4798
                           ]:
         file_list.append(f"{missing_level:05}.npy")
 
