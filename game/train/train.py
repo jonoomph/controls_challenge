@@ -29,12 +29,13 @@ class TrainingRun:
         self.input_window = []
         self.output_window = []
         self.cost_window = []
+        self.cost_total_window = []
         self.batch_size = batch_size
         self.optimizer = optimizer
         self.model = model
         self.loss_fn = loss_fn
 
-    def process_batch(self, steer_cost_min=-4, steer_cost_max=0.5):
+    def process_batch(self, steer_cost_min=-4, steer_cost_max=1):
         if len(self.predictions) >= self.batch_size:
             # Shuffle the batch
             combined = list(zip(self.predictions, self.solved, self.steer_costs))
@@ -68,34 +69,16 @@ class TrainingRun:
             # Log the loss
             self.total_loss += weighted_loss.item()
 
-    def train(self, state_input, steer_torque, steer_cost, diff_threshold=0.08):
+    def train(self, state_input, steer_torques, steer_cost_diff, steer_cost_total):
+
         # Store the current input and output in their respective windows
         self.input_window.append(state_input)
-        self.output_window.append(steer_torque)
-        self.cost_window.append(steer_cost)
+        self.output_window.append(steer_torques)
+        self.cost_window.append(steer_cost_diff)
+        self.cost_total_window.append(steer_cost_total)
 
         # Process only if we have enough data for one window
         if len(self.input_window) >= self.window_size:
-
-            # # Stack the inputs to form a windowed tensor
-            # window_tensor = torch.stack(self.input_window[-self.window_size:])
-            # # Extract the lateral accel diff from segment 0 (closest to current)
-            # avg_diff = torch.mean(torch.abs(window_tensor[:, 0, 0])).item()
-            # # # Skip this window if the average difference exceeds the threshold
-            # if avg_diff > diff_threshold:
-            #     # Slide the window without processing
-            #     self.input_window.pop(0)
-            #     self.output_window.pop(0)
-            #     return
-
-            # #print(torch.std(torch.tensor(self.cost_window)).item())
-            # if torch.mean(torch.abs(torch.tensor(self.cost_window))).item() > 2.0:
-            # #if torch.std(torch.tensor(self.cost_window)).item() > 0.9:
-            #     # Slide the window without processing
-            #     self.input_window.pop(0)
-            #     self.output_window.pop(0)
-            #     return
-
             # Stack the inputs to form a windowed tensor
             input_tensor = torch.stack(self.input_window[-self.window_size:]).unsqueeze(0).squeeze(2)
 
@@ -104,7 +87,7 @@ class TrainingRun:
 
             # Store the prediction and the PID output
             self.predictions.append(model_output)
-            self.solved.append(self.output_window[-1])
+            self.solved.append(self.output_window[-1][0])
             self.steer_costs.append(self.cost_window[-1])
 
             # Process the batch (if needed)
@@ -114,6 +97,7 @@ class TrainingRun:
             self.input_window.pop(0)
             self.output_window.pop(0)
             self.cost_window.pop(0)
+            self.cost_total_window.pop(0)
 
 
 def export_model(epoch=None, prefix="model", window_size=7, model=None, optimizer=None, logging=True):
@@ -199,17 +183,6 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
     total_loss = 0
     threads = []
 
-    # forward = np.linspace(0.03, 1.0, round(epochs / 2.0), endpoint=False)
-    # backward = np.linspace(1.0, 0.03, round(epochs / 2.0))
-    # diff_thresholds = np.concatenate((forward, backward))
-    diff_thresholds = np.linspace(1.0, 0.04, epochs)
-
-    # curve for diff
-    # x_sigmoid = np.linspace(1.0, 0.03, epochs)
-    # sigmoid_curve = 1 / (1 + np.exp(-x_sigmoid))
-    # diff_thresholds = 1.0 + (0.03 - 1.0) * sigmoid_curve
-    # reversed(diff_thresholds)
-
     for epoch in range(epochs):
         epoch_loss = 0
 
@@ -230,9 +203,10 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
                 for row in tensor_data_subset:
                     input_tensor = row[0]
-                    steer_torque = row[1]
-                    steer_cost = row[2]
-                    run.train(input_tensor, steer_torque, steer_cost)
+                    steer_torques = row[1]
+                    steer_cost_diff = row[2]
+                    steer_cost_total = row[3]
+                    run.train(input_tensor, steer_torques, steer_cost_diff, steer_cost_total)
 
                 # Add loss
                 epoch_loss += run.total_loss
@@ -256,8 +230,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
                 cost = test_models.start_testing(
                     f"{prefix}-{epoch + 1}",
                     logging=logging,
-                    window_size=window_size,
-                    training_files=20
+                    window_size=window_size
                 )
                 callback(epoch, cost)  # Trigger callback with results
 
@@ -278,7 +251,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
             print('\nAnalyze Models...')
             analyze_worst_files()
         # Return simulation cost: filter= f"{prefix}-{epochs}"
-        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size, training_files=20)
+        total_cost = test_models.start_testing(f"{prefix}-{epochs}", logging=logging, window_size=window_size)
         return total_cost
     else:
         # Return average training loss

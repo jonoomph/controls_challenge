@@ -10,9 +10,10 @@ from controllers.pid_model import Controller
 
 DATAFILES_START = 0
 MAX_TRAINING_ROWS = 600
+TRAINING_FILES = [3585, 4120, 1699, 2758, 1417, 2134, 3953, 424, 3612, 2507, 3242, 310, 4313, 3080, 2911, 42, 3539, 3442, 3665, 4604, 4580, 3715, 1284, 3720, 3193, 4427, 4720, 2224, 4479, 1506, 4563, 4911, 3369, 3264, 4067, 4483, 3991, 716, 3395, 1905, 2672, 4754, 4059, 4611, 3907, 4800, 4104, 2514, 3503, 784, 3713, 3265, 4694, 3358, 1475, 655, 4567, 4487, 3945, 2476, 837, 1858, 2688, 3098, 1503, 2222, 2143, 3974, 200, 4063, 2727, 3028, 2357, 1660]
 
 
-def start_testing(filter=None, logging=True, window_size=22, training_files=25):
+def start_testing(filter=None, logging=True, window_size=22, training_files=74):
     # Setup SummaryWriter for TensorBoard logging
     global MAX_TRAINING_ROWS
     tiny_model_path = Path('../../models/tinyphysics.onnx')
@@ -26,7 +27,8 @@ def start_testing(filter=None, logging=True, window_size=22, training_files=25):
             continue
 
         for file_index in range(DATAFILES_START, DATAFILES_START + training_files):
-            data_path = f'../../data/{file_index:05d}.csv'
+            TRAINING_FILE = TRAINING_FILES[file_index]
+            data_path = f'../../data/{TRAINING_FILE:05d}.csv'
 
             # Create simulator
             controller = Controller(model_path=model_path, window_size=window_size)

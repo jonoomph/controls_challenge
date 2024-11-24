@@ -481,10 +481,158 @@
     REVERTED MANY MISSING FILES, ADDED 30 NEW LEVEL CANDIDATES (cap 600 score)
     LEVELS: PID-TOP: 34 wins, PID-REPLAY: 47 wins, PID-FF: 34 wins
     X: test	0.594	17.172	46.856 (100 tests, clamped -4:0.5, no filters, lr=1.5e-5)
-    X: test	0.591	17.276	46.839 (200 tests)
-    X: test	0.672	18.954	52.570 (5000 tests, +5.714)
+        X: test	0.591	17.276	46.839 (200 tests)
+        X: test	0.672	18.954	52.570 (5000 tests, +5.714)
 
     ADDED 11 WORST TOTAL SCORE COMPARED TO PIDS 5000 eval (PID-TOP: 35 wins, PID-REPLAY: 47 wins, PID-FF: 40 wins, PID: 4 wins)
     X: test	0.591	17.105	46.647 (100 tests)
-    X: test	0.594	17.308	46.992 (200 tests)
-    X: test	0.658	18.846	51.756 (5000 tests, NEW HIGH SCORE!!!! +5.109, +3.676 points from 1st place)
+        X: test	0.594	17.308	46.992 (200 tests)
+        X: test	0.658	18.846	51.756 (5000 tests, NEW HIGH SCORE!!!! +5.109, +3.676 points from 1st place)
+
+    ADDED REPLAYS and OPTIMIZED 15 levels (from the previous candidates): PID-TOP: 33 wins, PID-REPLAY: 65 wins, PID-FF: 35 wins, PID: 3 wins
+    28: test	0.599	17.096	47.057 (100 tests, with stability bonus 0.5)
+        28: test	0.597	17.267	47.103 (200 tests)
+        28: test	0.670	18.780	52.268 (5000 tests)
+    26: test	0.601	17.153	47.183 (100 tests, with no stability bonus)
+        26: test	0.598	17.282	47.207 (200 tests)
+        26: test	0.684	18.941	53.156 (5000 tests)
+    NOTE: Seems like either human replays OR optimizing has made model dumber
+
+    REMOVING OPTIMIZATIONS - leaving human replay for the 15 levels: PID-REPLAY: 64 wins, PID-FF: 37 wins, PID-TOP: 33 wins, PID: 6 wins
+    X: test	0.601	17.153	47.183 (100 tests, with no stability bonus)
+
+    ADDING 3 STEER OUTPUTS
+    25: test	0.568	18.191	46.576 (100 tests, only output 0)
+        25: test	0.581	18.357	47.394 (200 tests)
+    25: test	0.569	18.119	46.580 (100 tests, average of 3 outputs)
+        25: test	0.578	18.271	47.152 (200 tests)
+    25: (5000 tests)
+
+    REVERT BACK before replays and optimizing (but model still has 3 steer outputs)
+    22: test	0.588	18.114	47.518 (100 tests)
+    23: test	0.583	18.220	47.365 (100 tests)
+    24: test	0.576	18.253	47.050 (100 tests)
+    25: test	0.568	18.191	46.576 (100 tests)
+        25: test	0.581	18.357	47.394 (200 tests)
+    26: test	0.567	18.188	46.548 (100 tests)
+        26: test	0.577	18.421	47.280 (200 tests)
+
+    REVERT AGAIN (no new replays or optimizations), ADDED pid_model to SIMULATION DATA (EXPERIMENT). Still 3 steer outputs.
+    MIGHT BLOW UP MODEL: PID-TOP: 18 wins, PID-MODEL: 48 wins, PID-REPLAY: 32 wins, PID-FF: 24 wins, PID: 4 wins
+    NOTE: 20 tests no longer represents the same curve as 100 tests
+    25: test	0.555	18.382	46.120 (100 tests)
+    26: test	0.554	18.453	46.141 (100 tests)
+        26: test	0.579	18.648	47.597 (200 tests)
+    27: test	0.549	18.461	45.893 (100 tests)
+        27: test	0.577	18.732	47.571  (200 tests)
+    28: test	0.548	18.499	45.909 (100 tests)
+        28: test	0.575	18.751	47.512 (200 tests)
+        28: test	0.574	18.737	47.454 (200 tests, linear scaling between t1, t2, t3)
+        28: test	0.650	20.677	53.168 (5000 tests, t0 output)
+    29: test	0.546	18.528	45.823 (100 tests)
+        29: test	0.578	18.850	47.758 (200 tests)
+    30: test	0.547	18.500	45.840 (100 tests)
+    31: test	0.545	18.412	45.670 (100 tests)
+        31: test	0.578	18.773	47.650 (200 tests)
+    32: test	0.548	18.488	45.905 (100 tests)
+    33: test	0.547	18.477	45.806 (100 tests)
+    34: test	0.546	18.446	45.770
+        34: test	0.580	18.776	47.766 (200 tests)
+    35: test	0.548	18.424	45.841
+
+    REVERT AGAIN (no new replays or optimizations), REVERTING TO 1 steer OUTPUT
+    REPRODUCE HIGH SCORE, USE MODEL TO RE-SAVE SIMULATIONS, TRAIN AGAIN
+    27: test	0.599	17.225	47.186 (100 tests)
+    28: test	0.598	17.191	47.071 (100 tests)
+    29: test	0.592	17.142	46.734 (100 tests)
+    30: test	0.592	17.192	46.809 (100 tests)
+    31: test	0.593	17.120	46.749 (100 tests)
+    32: test	0.590	17.100	46.597 (100 tests)
+        32: test	0.593	17.298	46.933 (200 tests)
+        32: test	0.658	18.847	51.764 (5000 tests)
+    33: test	0.595	17.126	46.880 (100 tests)
+    34: test	0.593	17.098	46.724 (100 tests)
+    35: test	0.594	17.062	46.754 (100 tests)
+
+    SAVED GOOD MODEL (51.764 score) /good/ folder, 1 steer output
+    PID-TOP: 11 wins, PID-MODEL: 57 wins, PID-REPLAY: 28 wins, PID-FF: 27 wins, PID: 3 wins
+    24: test	0.609	17.282	47.735 (100 tests)
+    25: test	0.607	17.305	47.666 (100 tests)
+    26: test	0.604	17.246	47.426 (100 tests)
+    27: test	0.603	17.266	47.402 (100 tests)
+    28: test	0.603	17.234	47.368 (100 tests)
+    29: test	0.602	17.223	47.334 (100 tests)
+        29: test	0.602	17.402	47.491 (200 tests)
+    30: test	0.604	17.226	47.423 (100 tests)
+    31: test	0.605	17.228	47.474 (100 tests)
+    32: test	0.603	17.189	47.339 (100 tests)
+        32: test	0.602	17.343	47.456 (200 tests)
+        32: test	0.673	18.968	52.595 (5000 tests, got worse with model simulations)
+
+    REVERT AGAIN - NO PID_MODEL SIMULATIONS, ADDED 60 NEW CANDIDATES (PID's only)
+    155 simulations: PID-TOP: 60 wins, PID-REPLAY: 51 wins, PID-FF: 73 wins, PID: 5 wins, PID-FUTURE: 1 wins
+        21: test	0.588	17.572	46.966 (200 tests)
+    22: test	0.588	17.294	46.703 (100 tests)
+        22: test	0.585	17.534	46.765 (200 tests)
+        22: test	0.662	19.129	52.237 (5000 tests)
+    23: test	0.584	17.308	46.507 (100 tests)
+        23: test	0.586	17.699	46.996 (200 tests)
+        23: test	0.661	19.138	52.177 (5000 tests)
+    24: test	0.586	17.275	46.582 (100 tests)
+        24: test	0.589	17.731	47.191 (200 tests)
+        24: test	0.660	19.128	52.144 (5000 tests)
+    25: test	0.584	17.209	46.432 (100 tests)
+        25: test	0.590	17.694	47.194 (200 tests)
+        25: test	0.650	19.015	51.521 (5000 tests, NEW HIGH SCORE!!! +5.089)
+    26: test	0.585	17.238	46.512 (100 tests)
+        26: test	0.590	17.743	47.253 (200 tests)
+        26: test	0.650	19.023	51.503 (5000 tests, NEW HIGH SCORE!!! +4.991)
+    27: test	0.587	17.240	46.575 (100 tests)
+        27: test	0.649	18.978	51.450 (5000 tests, NEW HIGH SCORE!!! +4.875)
+    28: test	0.591	17.207	46.736 (100 tests)
+        28: test	0.650	18.974	51.479 (5000 tests, +4.743)
+    32: test	0.601	17.158	47.215 (100 tests)
+        32: test	0.657	18.956	51.826 (5000 tests, aiming for a +3.9 diff, +4.611)
+
+    NEW PLAN - interpolate clamp range from -6:+6 to -4:0 over 15 EPOCHS (allow ALL data to train at first, then clamp down on only GOOD steers)
+    20: test	0.603	17.190	47.341 (100 tests)
+        20: test	0.597	17.338	47.187  (200 tests)
+    25: test	0.597	17.294	47.129 (100 tests)
+        25: test	0.597	17.634	47.481 (200 tests)
+
+    NEW VALIDATION SET (150 candidate files)
+    16: test	0.650	17.031	49.536 (100 tests)
+    16: test	0.656	17.056	49.866 (200 tests)
+    26: test	0.817	17.010	57.852 (100 tests)
+
+    NEW VALIDATION SET (150 with no dupes - best score 112, much too high)
+    28: test	0.616	17.118	47.941 (100 tests)
+    28: test	0.619	17.831	48.803 (200 tests)
+    28: test	0.673	18.934	52.572 (5000 tests)
+
+    REVERT CHANGES
+    18: test	0.674	19.060	52.756 (5000 tests)
+    25: test	0.655	18.900	51.660 (5000 tests)
+
+    ADDED 57 candidates (balanced on score - updated plot_levels)
+    UPDATED 57 TESTING FILES (using plot_levels - trying to predict best model for 5000 sims)
+    18: test	0.599	17.299	47.229 (100 tests)
+    18: test	0.606	17.569	47.856 (200 tests)
+    18: test	0.665	18.948	52.198 (5000 tests)
+    25: test	0.621	17.087	48.150 (100 tests)
+    25: test	0.617	17.359	48.201 (200 tests)
+    25: test	0.678	18.796	52.690 (5000 tests)
+    22: test	0.610	17.101	47.611 (100 tests)
+    22: test	0.607	17.323	47.676 (200 tests)
+    22: test	0.671	18.828	52.376 (5000 tests)
+
+    REVERT CHANGES: Added 74 new candidates (plot levels)
+    UPDATED 74 TESTING FILES (plot levels)
+    16: test	0.602	17.229	47.333  (100 tests)
+    16: test	0.664	18.795	51.976 (5000 tests)
+    47: test	0.622	17.282	48.359 (100 tests)
+    47: test	0.654	18.757	51.432 (5000 tests, NEW HIGH SCORE!!! +3.073)
+    54: test	0.623	17.328	48.483 (100 tests)
+    54: test	0.653	18.843	51.471 (5000 tests)
+
+

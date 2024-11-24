@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 plt.interactive(False)
 
 import tinyphysics
-from controllers import replay, pid, pid_top, pid_future, pid_w_ff
+from controllers import replay, pid, pid_top, pid_future, pid_w_ff, pid_model, experimental
 
 SIM = None
 EPOCHS = 1
@@ -30,7 +30,7 @@ class Controller:
         self.lataccel_window = []
 
     def store_transition(self, state, action):
-        self.replay_buffer.append([state, action, 0.0])
+        self.replay_buffer.append([state, action, 0.0, 0.0])
 
     def average(self, values):
         if len(values) == 0:
@@ -106,19 +106,29 @@ def start_training(num_files=99):
     # Append missing levels (PID ONLY DATA)
     for missing_level in [2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 1387, 3712, 2931, 2894, 4661,
                           1789, 3214, 4097, 1611, 2675, 4731, 1705, 188, 1809, 4178, 3008, 3817, 1703, 1191, 1716,
+                          2732, 2365, 2362, 3622, 356, 1071, 1949, 3078, 530, 779, 4486, 4253, 3296, 772, 779,
 
-                          2732, 2365, 2362, 3622, 356, 1071, 1949, 3078, 530, 779, 4486
+                          3617, 19, 2251, 4132, 4883, 4562, 2642, 4699, 3531, 4317, 1462, 1496, 3797, 4280, 4523, 4423,
+                          2052, 1635, 920, 1931, 2438, 3545, 4492, 877, 393, 3774, 4191, 2204, 1658, 3498, 4750, 1468,
+                          651, 3565, 4471, 3489, 4085, 3798, 3981, 4872, 498, 3187, 4099, 2634, 439, 3603, 4989, 4546,
+                          3780, 1531, 4634, 4719, 3287, 4654, 745, 4784, 3637, 696, 2623, 2437, 1621, 4003, 196, 4811,
+                          1529, 3457, 1717, 4193, 3467, 57, 4531, 2163, 1123, 4038
                           ]:
         file_list.append(f"{missing_level:05}.npy")
 
     results = defaultdict(dict)
     win_counts = defaultdict(int)
     all_steer_costs = []
+    existing_simulations = [sim.split("-")[0] for sim in os.listdir("simulations")]
 
     for epoch in range(EPOCHS):
         for file_name in file_list:
             level_num = int(os.path.splitext(file_name)[0])
             data_path = os.path.join('../../data/', f'{level_num:05}.csv')
+
+            if f'{level_num:05}' in existing_simulations:
+                print(f"Skipping existing simulation: {level_num:05}")
+                continue
 
             # Dictionary to store scores and replay buffers
             scores = {}
@@ -130,7 +140,9 @@ def start_training(num_files=99):
                 ("PID-TOP", pid_top.Controller()),
                 ("PID-FF", pid_w_ff.Controller()),
                 ("PID-FUTURE", pid_future.Controller()),
-                ("PID", pid.Controller())
+                ("PID", pid.Controller()),
+                ("PID-EXPERIMENTAL", experimental.Controller()),
+                #("PID-MODEL", pid_model.Controller()),
             ]:
                 # Create simulator with the specific controller
                 sim = tinyphysics.TinyPhysicsSimulator(
@@ -156,14 +168,14 @@ def start_training(num_files=99):
                             # Ensure we have enough cost history for weighted diff calculation
                             if len(cost_history) >= 4:
                                 # Calculate weighted score diff
-                                weighted_diff = sum(
-                                    weights[i] * (cost_history[-3 + i] - cost_history[-4 + i])
-                                    for i in range(3)
-                                )
+                                weighted_diff = sum(weights[i] * (cost_history[-3 + i] - cost_history[-4 + i]) for i in range(3))
+                                weighted_total = sum(weights[i] * cost_history[-3 + i] for i in range(3))
 
                                 # Assign weighted diff to replay buffer (3 steps earlier)
                                 if len(sim.controller.replay_buffer) >= 3:
                                     sim.controller.replay_buffer[-3][2] = weighted_diff
+                                    sim.controller.replay_buffer[-3][3] = weighted_total
+                                    sim.controller.replay_buffer[-3][1] = [torque[1] for torque in sim.controller.replay_buffer[-3:]]
 
                             # Append the cost diff to all_steer_costs for analysis
                             cost_diff = total_cost - previous_cost
