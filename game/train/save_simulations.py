@@ -121,6 +121,7 @@ def start_training(num_files=99):
 
     results = defaultdict(dict)
     win_counts = defaultdict(int)
+    filtered_results_set = set()
     all_steer_costs = []
     existing_simulations = [sim.split("-")[0] for sim in os.listdir("simulations")]
 
@@ -207,10 +208,22 @@ def start_training(num_files=99):
             # Save data for plotting
             results[file_name] = {"scores": scores, "buffers": replay_buffers}
 
+            # Evaluate if the file meets the filtering criteria
+            replay_diff = scores["PID-REPLAY"] - best_score
+            if best_controller_name != "PID-REPLAY" and replay_diff > 20 and best_score >= 80:
+                result_tuple = (f"{level_num:05}", best_controller_name, f"+{replay_diff:.1f}", f"{best_score:.1f}")
+                filtered_results_set.add(result_tuple)
+
             # Output the score comparison
             score_diffs = [f"{name}: {scores[name] - best_score:+.1f}" for name in scores if name != best_controller_name]
             score_output = f"{level_num:05d}: {best_controller_name} : {best_score:.1f} cost ({', '.join(score_diffs)})"
             print(score_output)
+
+    # Print filtered results
+    print("\nFiltered Results (Files to Target for PID-REPLAY Improvements):")
+    sorted_results = sorted(filtered_results_set, key=lambda x: float(x[3]), reverse=True)
+    for result in sorted_results:
+        print(f"{result[0]}, {result[1]}, {result[2]}, {result[3]}")
 
     # Final breakdown of wins per controller
     print("\nFinal Summary: Number of Wins per Controller")
