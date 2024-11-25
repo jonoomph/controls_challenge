@@ -46,7 +46,7 @@ class Controller:
         global SIM
 
         # Compute the differences from the current state for each segment
-        future_segments = [(0, 1), (1, 2), (2, 3), (3, 4)]
+        future_segments = [(1, 2), (2, 3), (3, 4)]
         diff_values = {
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
@@ -57,9 +57,9 @@ class Controller:
         }
 
         # Previous steering torque
-        previous_action = [0, 0, 0, 0]
-        if len(self.prev_actions) >= 4:
-            previous_action = self.prev_actions[-4:]
+        previous_action = [0, 0, 0]
+        if len(self.prev_actions) >= 3:
+            previous_action = self.prev_actions[-3:]
 
         # Flatten the differences into a single list
         state_input_list = (diff_values['lataccel'] + diff_values['roll'] + diff_values['a_ego'] + diff_values['v_ego'] + previous_action)

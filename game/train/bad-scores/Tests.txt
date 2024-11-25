@@ -644,10 +644,43 @@
     ADDED 11 NEW LEVELS (where PID MODEL under performs PIDs)
     23: test	0.591	17.611	47.138 (100 tests)
     23: test	0.591	17.957	47.502 (200 tests)
-    23: test	0.643	19.263	51.416 (5000 tests +4.278)
+    23: test	0.643	19.263	51.416 (5000 tests, NEW HIGH SCORE!!!! +4.278)
     36: test	0.614	17.727	48.422 (200 tests)
     WINDOW_SIZE from 34 to 30
     23: test	0.590	17.607	47.105 (100 tests)
     23: test	0.587	17.914	47.266 (200 tests)
-    23:  (5000 tests)
+    23: test	0.642	19.262	51.384 (5000 tests, NEW HIGH SCORE!!!! +4.279)
 
+    ADDED 25 worse controller candidates
+    21: test	0.597	17.898	47.733 (200 tests)
+    22: test	0.603	17.560	47.726 (100 tests)
+    22: test	0.596	17.838	47.627 (200 tests)
+    22: test	0.648	19.146	51.561 (5000 tests)
+
+    REVERTING 25 worst controller candidates
+    NEW INPUT RANGE: [(0, 1), (1, 2), (2, 3)] + 3 PREV STEERS
+    25: test	0.564	18.522	46.703 (100 tests)
+    25: test	0.565	19.110	47.377 (200 tests)
+    25: test	0.637	20.528	52.380 (5000 tests)
+    31: test	0.587	18.260	47.598 (100 tests)
+    31: test	0.582	18.983	48.080 (200 tests)
+    31: test	0.637	20.222	52.071 (5000 tests)
+
+    NEW INPUT RANGE: [(0, 1), (1, 2), (2, 3)] + 3 PREV STEERS
+    PID-EXPERIMENTAL: 40 wins, PID-REPLAY: 54 wins, PID-TOP: 23 wins, PID-FF: 47 wins, PID: 6 wins, PID-FUTURE: 1 wins
+
+    32: test	0.558	17.522	45.413 (100 tests)
+    32: test	0.554	17.727	45.425 (200 tests)
+    32: test	0.608	19.065	49.446 (5000 tests, NEW HIGH SCORE!!!! +4.033)
+
+    31: test	0.559	17.593	45.520 (100 tests)
+    31: test	0.555	17.777	45.538 (200 tests)
+    31: test	0.608	19.082	49.494 (5000 tests, +3.974)
+
+    35: test	0.562	17.470	45.586 (100 tests)
+    35: test	0.558	17.712	45.593 (200 tests)
+    35: test	0.609	19.043	49.515 (5000 tests, +3.929)
+
+    30: test	0.557	17.579	45.434 (100 tests)
+    30: test	0.554	17.780	45.490 (200 tests)
+    30: test	0.610	19.102	49.580 (5000 tests, +4.146)

@@ -60,7 +60,7 @@ summary_df_scaled = scaler.fit_transform(summary_df[['vEgo_mean', 'vEgo_std', 'a
                                                      'steerCommand_mean', 'steerCommand_std']])
 
 # Use k-means clustering to cluster the drives into groups
-kmeans = KMeans(n_clusters=100, random_state=44)
+kmeans = KMeans(n_clusters=100, random_state=42)
 summary_df['cluster'] = kmeans.fit_predict(summary_df_scaled)
 
 # Merge with evaluation results to analyze performance
@@ -69,9 +69,9 @@ merged_df['is_training'] = merged_df['file'].apply(lambda x: 1 if x in training_
 filtered_df = merged_df.loc[merged_df['is_training'] == 0]
 
 # Define score range for candidates
-min_score = 1
+min_score = 0
 max_score = 500
-num_candidates = 30
+num_candidates = 65
 
 # Filter out files with scores outside the range
 filtered_df = filtered_df[(filtered_df['total_cost'] >= min_score) & (filtered_df['total_cost'] <= max_score)]
