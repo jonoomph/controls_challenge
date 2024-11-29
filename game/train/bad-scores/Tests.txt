@@ -666,21 +666,108 @@
     31: test	0.582	18.983	48.080 (200 tests)
     31: test	0.637	20.222	52.071 (5000 tests)
 
-    NEW INPUT RANGE: [(0, 1), (1, 2), (2, 3)] + 3 PREV STEERS
+    NEW INPUT RANGE: [(1, 2), (2, 3), (3, 4)] + 3 PREV STEERS
     PID-EXPERIMENTAL: 40 wins, PID-REPLAY: 54 wins, PID-TOP: 23 wins, PID-FF: 47 wins, PID: 6 wins, PID-FUTURE: 1 wins
 
     32: test	0.558	17.522	45.413 (100 tests)
     32: test	0.554	17.727	45.425 (200 tests)
     32: test	0.608	19.065	49.446 (5000 tests, NEW HIGH SCORE!!!! +4.033)
-
     31: test	0.559	17.593	45.520 (100 tests)
     31: test	0.555	17.777	45.538 (200 tests)
     31: test	0.608	19.082	49.494 (5000 tests, +3.974)
-
     35: test	0.562	17.470	45.586 (100 tests)
     35: test	0.558	17.712	45.593 (200 tests)
     35: test	0.609	19.043	49.515 (5000 tests, +3.929)
-
     30: test	0.557	17.579	45.434 (100 tests)
     30: test	0.554	17.780	45.490 (200 tests)
     30: test	0.610	19.102	49.580 (5000 tests, +4.146)
+
+    RECORDING 11 HUMAN REPLAYS, OPTIMIZING 6 of them, DELETING 3 of them (zig zag garbage)
+    NEW TESTS (60 plot levels)
+    33: test	0.560	17.389	45.402 (100 tests)
+    33: test	0.560	17.696	45.672 (200 tests)
+    33: test	0.612	18.950	49.527 (5000 tests, +4.125)
+    34: test	0.561	17.340	45.394 (100 tests)
+    34: test	0.560	17.717	45.707 (200 tests)
+    34: test	0.611	18.936	49.506 (5000 tests)
+    35: test	0.613	18.908	49.565 (5000 tests)
+    36: test	0.614	18.878	49.583 (5000 tests)
+
+    REMOVING 13 worst files (when only training on single file, 10 epochs, >1400 sim score)
+    30: test	0.555	17.413	45.157 (100 tests)
+    30: test	0.559	17.775	45.700 (200 tests)
+    30: test	0.618	18.922	49.809 (5000 tests, did worse)
+
+    REVERTING 13 deleted files
+    29: test	0.560	17.587	45.595 (100 tests)
+    29: test	0.561	17.857	45.892 (200 tests)
+    29: test	0.619	19.176	50.102 (5000 tests)
+
+    DELETE ALL "REPLAY" FILES
+    X: Worse
+
+    REVERTING ALL CHANGES (155 sims)
+    27: test	0.560	17.638	45.630 (100 tests)
+    31: test	0.561	17.395	45.428 (100 tests)
+    31: test	0.559	17.779	45.715 (200 tests)
+    31: test	0.612	18.950	49.571 (5000 tests)
+    37: test	0.578	17.356	46.240 (100 tests)
+    37: test	0.569	17.586	46.030 (200 tests)
+
+    OPTUNA TRIAL 28 (81 files, LR=1e-4):
+    10: test	0.565	17.667	45.931 (100)
+
+    OPTUNA TRIAL 30 (85 files, LR=5e-5):
+    19: test	0.563	17.454	45.594 (100)
+    19: test	0.566	17.856	46.168 (200 tests)
+    19: test	0.632	19.241	50.820 (5000 tests)
+
+    REVERT ALL CHANGES (156 sims), MODEL (12 inputs + 1 prev steer), 3 outputs (steers)
+    validation curve worse
+    MODEL (15 inputs w/ 3 prev steer), 3 outputs (steers), 85 NN
+    36: test	0.603	16.970	47.095 (100 tests)
+    36: test	0.588	17.302	46.705 (200 tests)
+    36: test	0.632	18.493	50.070 (5000 tests)
+    MODEL (15 inputs w/ 3 prev steer), 2 outputs (steers), 85 NN, LR=1.5e-5
+    27: test	0.542	18.252	45.330 (100 tests)
+    27: test	0.589	19.919	49.364 (5000 tests, NEW HIGH SCORE!!! +4.034)
+
+    NN 80, 3 HIDDEN LAYERS, worse than 2 layers, unstable
+    23: test	0.575	18.410	47.184 (100 tests)
+    23: test	0.578	18.613	47.530 (200 tests)
+
+    NN 80, 2 HIDDEN LAYERS, Added 26 plotted controller under performers
+    28: test	0.536	18.025	44.821 (100 tests)
+    28: test	0.540	18.152	45.167 (200 tests)
+    28: test	0.580	19.504	48.500 (5000 tests, NEW HIGH SCORE!!!! +3.679)
+
+    ADDED 27 new under performing controller levels
+    19: test	0.533	18.355	45.020 (100 tests)
+    19: test	0.531	18.379	44.919 (200 tests)
+    19: st	0.580	19.811	48.788 (5000 tests, got worse)
+
+    REVERTED 27 new levels, NN 85, Removed 04803, 02531, 01387, 04731, clamp to -4:0.25
+    29: test	0.525	18.548	44.815 (100)
+    ADDING BACK 4 removed files
+    26: worse - I think clamp 0.25 is the issue
+
+    NN to 80, clamp to -5:1
+    REMOVED 01611, 03166, 02531, 01387, 02931
+    21: test	0.537	18.143	44.982 (100 tests)
+    21: test	0.541	18.187	45.221 (200 tests)
+    24: test	0.536	17.901	44.698 (100 tests)
+    24: test	0.541	17.988	45.059 (200 tests)
+    24: test	0.590	19.445	48.935 (5000 tests)
+
+    REVERTING DELETED FILES, clamp to -4:1
+    26: test	0.532	18.069	44.688 (100)
+    26: test	0.535	18.224	44.998 (200)
+    26: test	0.577	19.615	48.475 (5000, NEW HIGH SCORE!!! +3.787)
+
+    CLAMP to -5:1
+    X: seemed worse
+
+    Trial 4: {'window_size': 26, 'hidden_size': 88, 'steer_clamp_min': -4.082161344429014, 'steer_clamp_max': 1.0197646935977005}
+    X: worse
+
+

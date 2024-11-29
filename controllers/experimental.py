@@ -22,6 +22,15 @@ class Controller(BaseController):
         self.counter = 0
         self.max_integral = 10  # Anti-windup limit for integral term
 
+    def correct(self, action):
+        current_output = self.p * (self.prev_error) + self.i * self.error_integral + self.d * (
+                    self.prev_error - self.prev_error)
+        correction = action - current_output  # Difference between external action and PID output
+
+        # Adjust the integral and previous error to match the external action
+        self.error_integral += correction / self.i if self.i != 0 else 0
+        self.prev_error = correction / self.p if self.p != 0 else 0
+
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer=math.inf):
         # Reset error integral and prev error when control is handed over
         self.counter += 1

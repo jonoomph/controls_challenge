@@ -9,7 +9,10 @@ class Controller(BaseController):
     AI-powered PID controller with error correction via traditional PID logic.
     """
 
-    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-PALds-35.onnx"):
+    def correct(self, action):
+        pass
+
+    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-bkPds-29.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -17,8 +20,16 @@ class Controller(BaseController):
             window_size (int): Size of the time-series window for model input.
             model_path (str): Path to the ONNX model file.
         """
-        # Load ONNX model
-        self.ort_session = ort.InferenceSession(model_path)
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = 1
+        options.inter_op_num_threads = 1
+        options.log_severity_level = 3
+        providers = [
+            #'CUDAExecutionProvider',
+            'CPUExecutionProvider']
+
+        with open(model_path, "rb") as f:
+            self.ort_session = ort.InferenceSession(f.read(), options, providers)
 
         # Initialize parameters
         self.window_size = window_size
@@ -77,7 +88,18 @@ class Controller(BaseController):
         control_signal = 0
         if len(self.input_window) >= self.window_size: # and self.step_idx >= 93:
             input_tensor = np.array(self.input_window[-self.window_size:]).reshape(1, self.window_size, -1)
-            control_signal = self.ort_session.run(None, {'input': input_tensor})[0][0,0]
+            output = self.ort_session.run(None, {'input': input_tensor})[0]
+            control_signal = output[0,0]
+
+            # distance_from_target = abs(current_lataccel - self.average(future_plan.lataccel[1:3]))
+            # lower_bound = 0.9
+            # upper_bound = 0.99
+            #
+            # # Calculate the weight for output[0,1]
+            # weight = np.clip((distance_from_target - lower_bound) / (upper_bound - lower_bound), 0, 1)
+            #
+            # # Interpolate between output[0,0] and output[0,1]
+            # control_signal = (1 - weight) * output[0, 0] + weight * output[0, 1]
 
         # Override initial steer values
         if not math.isnan(steer):

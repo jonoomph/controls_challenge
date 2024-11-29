@@ -3,3 +3,4 @@ data/
 report.html
 models/tinyphysics_*.onnx
 *.swp
+/game/backup/

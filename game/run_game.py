@@ -1,10 +1,10 @@
 import tinyphysics
 from tinyphysics import CONTEXT_LENGTH
-from controllers import BaseController, pid, replay, pid_top
+from controllers import BaseController, pid, replay, pid_top, pid_model, experimental
 from draw_game import *
 import numpy as np
 
-LEVEL_IDX = 13
+LEVEL_IDX = 5
 CHECKPOINT = 0
 TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
@@ -64,7 +64,7 @@ class Controller(BaseController):
     def __init__(self, level):
         super().__init__()
         self.level = level
-        self.internal_pid = pid_top.Controller()
+        self.internal_pid = experimental.Controller()
         self.internal_replay = replay.Controller(level)
         self.torques = []
         self.lat_accel_cost = 0
