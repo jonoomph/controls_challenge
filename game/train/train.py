@@ -314,7 +314,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
 
 
 if __name__ == "__main__":
-    # Trial 88: {'lr': 8.640162515565103e-05, 'batch_size': 44, 'window_size': 22}
-    best_epoch, best_cost = start_training(epochs=30, analyze=True, logging=True, batch_size=44, lr=1.5e-5, seed=962,
-                                           window_size=30, hidden_size=88, clamp_min=-3.5, clamp_max=1)
+    # Trial 2 finished with value: 48.776776926369166 and parameters: {'batch_size': 43, 'window_size': 34, 'hidden_size': 102}. Best is trial 2 with value: 48.776776926369166.
+    best_epoch, best_cost = start_training(epochs=35, analyze=True, logging=True, lr=1.4e-5, seed=962,
+                                           batch_size=44, window_size=30, hidden_size=80, clamp_min=-4, clamp_max=1)
     print(best_epoch, best_cost)

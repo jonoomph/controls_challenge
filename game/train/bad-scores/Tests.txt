@@ -769,5 +769,124 @@
 
     Trial 4: {'window_size': 26, 'hidden_size': 88, 'steer_clamp_min': -4.082161344429014, 'steer_clamp_max': 1.0197646935977005}
     X: worse
+    Custom Trial: window_size=30, hidden_size=80, clamp_min=-4.5, clamp_max=0.5
+    29: test	0.535	18.207	44.942 (100)
+    29: test	0.533	18.337	44.977 (200)
+    29: test	0.581	19.801	48.852 (5000)
 
+    Trial 16: {'window_size': 32, 'hidden_size': 97, 'steer_clamp_min': -4.510828271339817, 'steer_clamp_max': 5.285405794708554}
+    18: test	0.531	18.126	44.689 (100)
+    18: test	0.538	18.289	45.173 (200, worse)
 
+    Trial 36: Best trial parameters: {'batch_size': 33, 'window_size': 41, 'hidden_size': 99
+    13: test	0.555	17.836	45.601 (100, worse on all epochs)
+
+    Custom Trial:  batch_size=50, window_size=50, hidden_size=85, clamp_min=-4, clamp_max=1.0
+    X: worse on all epochs
+
+    Trial 2 finished with value: 48.776776926369166 and parameters: {'batch_size': 43, 'window_size': 34, 'hidden_size': 102}. Best is trial 2 with value: 48.776776926369166.
+    19: test	0.539	18.307	45.268 (100)
+    19: test	0.546	18.559	45.859 (200)
+    19: test	0.599	20.071	50.013 (5000)
+
+    NN to 80
+    18: test	0.542	18.514	45.597 (100)
+    25: test	0.533	18.072	44.708 (100)
+    26: test	0.532	18.026	44.618 (100)
+    26: test	0.535	18.206	44.949 (200)
+    26: test	0.578	19.546	48.451 (5000, NEW HIGH SCORE!!!! +3.833)
+    27: test	0.533	17.952	44.589 (100)
+    27: test	0.537	18.129	44.994 (200)
+    28: test	0.538	17.967	44.857 (100)
+
+    NN 80, batch_size=30, window_size=40
+    15: test	0.536	18.123	44.921 (100)
+    16: test	0.535	18.083	44.826 (100)
+    17: test	0.536	18.023	44.815 (100)
+    17: test	0.547	18.175	45.541 (200)
+    18: test	0.540	18.014	44.997 (100)
+    19: test	0.543	17.925	45.099 (100)
+
+    NN 90, batch_size=30, window_size=45, hidden_size=90
+    X: worse
+
+    NN 78, batch_size=40, window_size=35, hidden_size=78
+    REMOVED 0633 level
+    19: test	0.557	18.062	45.925 (100)
+    15: test	0.564	18.302	46.484 (100)
+    21: test	0.558	17.901	45.799 (100)
+    23: test	0.560	17.779	45.795 (100)
+    25: test	0.569	17.697	46.142 (100)
+
+    NN 82, batch_size=35, window_size=40, hidden_size=82, clamp_min=-4, clamp_max=1.0)
+    REMOVED 0633 level
+    X: worse
+
+    NN 82, batch_size=35, window_size=35, hidden_size=82, clamp_min=-4, clamp_max=1.0)
+    ADDED BACK 0633 level
+    21: test	0.549	17.890	45.365 (100)
+    22: test	0.551	17.767	45.329 (100)
+    23: test	0.554	17.750	45.468 (100)
+    24: test	0.558	17.693	45.576 (100)
+
+    NN to 84, batch_size=43, window_size=33, hidden_size=84, clamp_min=-4, clamp_max=1.0)
+    23: test	0.562	18.140	46.219 (100)
+    27: test	0.569	17.923	46.385 (100)
+    34: test	0.590	17.616	47.106 (100)
+
+    NN to 81, batch_size=40, window_size=33, hidden_size=81, clamp_min=-4, clamp_max=1.0)
+    19: test	0.544	18.313	45.504 (100)
+    22: test	0.545	18.187	45.440 (100)
+    26: test	0.557	18.091	45.921 (100)
+
+    NN to 80, batch_size=48, window_size=35, hidden_size=80, clamp_min=-4, clamp_max=1.0)
+    BATCH SIZE >= Smoother Validation Curve
+    20: test	0.542	18.605	45.693 (100)
+    25: test	0.539	18.256	45.205 (100)
+    23: test	0.538	18.424	45.308 (100)
+    27: test	0.543	18.215	45.370 (100)
+
+    NN to 80, batch_size=40, window_size=35, hidden_size=80, clamp_min=-4, clamp_max=1.0)
+    24: test	0.539	18.212	45.176 (100)
+    25: test	0.535	18.073	44.807 (100)
+    26: test	0.538	18.017	44.918 (100)
+    27: test	0.539	17.960	44.907 (100)
+    29: test	0.546	17.887	45.176 (100)
+
+    NN to 80, batch_size=44, window_size=35, hidden_size=80, clamp_min=-4, clamp_max=1.0)
+    ADDED 4 new BAD SCORES - got worse
+    17: test	0.547	18.697	46.024 (100)
+    22: test	0.535	18.638	45.365 (100)
+    24: test	0.534	18.540	45.261 (100)
+    26: test	0.536	18.447	45.259 (100)
+    28: test	0.541	18.363	45.401 (100)
+    33: test	0.565	18.182	46.422 (100)
+
+    REVERT CHANGES. NN to 80, batch_size=44, window_size=30, hidden_size=80, clamp_min=-5, clamp_max=1.5)
+    lr=1.4e-5
+    25: test	0.532	18.169	44.774 (100)
+    26: test	0.532	18.101	44.705 (100)
+    26: test	0.582	19.655	48.759 (5000)
+    27: test	0.535	18.083	44.815 (100)
+    28: test	0.537	17.970	44.821 (100)
+    29: test	0.541	17.931	44.978 (100)
+    29: test	0.589	19.501	48.970 (5000)
+    30: test	0.546	17.888	45.202 (100)
+    31: test	0.550	17.837	45.327 (100)
+
+    NN to 80, batch_size=44, window_size=30, hidden_size=80, clamp_min=-4, clamp_max=1), lr=1.4e-5
+    ADDING 27 under performing controller levels
+    14: test	0.556	18.648	46.428 (100)
+    14: test	0.557	18.693	46.550 (200)
+    20: test	0.536	18.333	45.154 (100)
+    20: test	0.534	18.366	45.077 (200)
+    21: test	0.533	18.206	44.846 (100)
+    22: test	0.532	18.113	44.691 (100)
+    23: test	0.532	18.102	44.706 (100)
+    24: test	0.532	17.990	44.600 (100)
+    25: test	0.533	17.883	44.553 (100)
+    25: test	0.538	18.017	44.898 (200)
+    25: test	0.579	19.388	48.330 (5000, NEW HIGH SCORE!!!! +3.777)
+    26: test	0.539	17.876	44.846 (100)
+    27: test	0.543	17.800	44.954 (100)
+    28: test	0.545	17.741	45.012 (100)

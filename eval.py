@@ -134,7 +134,7 @@ if __name__ == "__main__":
   for controller_cat, controller_type in [('test', args.test_controller)]: #('baseline', args.baseline_controller),
     print(f"Running batch rollouts => {controller_cat} controller: {controller_type}")
     rollout_partial = partial(run_rollout, controller_type=controller_type, model_path=args.model_path, debug=False)
-    results = process_map(rollout_partial, files[SAMPLE_ROLLOUTS:], max_workers=16, chunksize=10)
+    results = process_map(rollout_partial, files[SAMPLE_ROLLOUTS:], max_workers=14, chunksize=10)
     for file, result in zip(files[SAMPLE_ROLLOUTS:], results):
       costs.append({'controller': controller_cat, 'file': file.name, **result[0]})
 
