@@ -1,6 +1,7 @@
 import argparse
 import importlib
 import numpy as np
+import numpy.random as npr
 import onnxruntime as ort
 import os
 import pandas as pd
@@ -64,6 +65,7 @@ class LataccelTokenizer:
 class TinyPhysicsModel:
   def __init__(self, model_path: str, debug: bool) -> None:
     self.tokenizer = LataccelTokenizer()
+    self.rng = None
     options = ort.SessionOptions()
     options.intra_op_num_threads = 1
     options.inter_op_num_threads = 1
@@ -83,7 +85,7 @@ class TinyPhysicsModel:
     # we only care about the last timestep (batch size is just 1)
     assert probs.shape[0] == 1
     assert probs.shape[2] == VOCAB_SIZE
-    sample = np.random.choice(probs.shape[2], p=probs[0, -1])
+    sample = self.rng.choice(probs.shape[2], p=probs[0, -1])
     return sample
 
   def get_current_lataccel(self, sim_states: List[State], actions: List[float], past_preds: List[float]) -> float:
@@ -104,6 +106,7 @@ class TinyPhysicsSimulator:
     self.data = self.get_data(data_path)
     self.controller = controller
     self.debug = debug
+    self.rng = None
     self.reset()
 
   def reset(self) -> None:
@@ -116,7 +119,8 @@ class TinyPhysicsSimulator:
     self.target_future = None
     self.current_lataccel = self.current_lataccel_history[-1]
     seed = int(md5(self.data_path.replace("../", "").encode()).hexdigest(), 16) % 10**4
-    np.random.seed(seed)
+    self.rng = npr.default_rng(seed)
+    self.sim_model.rng = self.rng
 
   def get_data(self, data_path: str) -> pd.DataFrame:
     df = pd.read_csv(data_path)
