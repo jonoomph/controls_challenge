@@ -1,20 +1,20 @@
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 import os
 import numpy as np
-import copy
-from controllers import replay
-import matplotlib.pyplot as plt
-import tinyphysics
 from pathlib import Path
-model_path = Path('../../models/tinyphysics.onnx')
-tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
+import tinyphysics
+from controllers import replay
 
-# Define the path to the simulations directory
-from tqdm import tqdm
 
+# Define paths
 simulations_dir = '../data/'
 solved_dir = '../data-optimized/'
+model_path = Path('../../models/tinyphysics.onnx')
+torques = np.linspace(-2.5, 2.5, 256)
 
 
+# Controller class definition
 class Controller:
     def __init__(self, replay_data=None, largest_index=0, threshold=.1):
         self.prev_state = None
@@ -28,154 +28,104 @@ class Controller:
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer=None):
         action = self.internal_pid.update(target_lataccel, current_lataccel, state, future_plan, steer)
-
-        step = self.internal_pid.step_idx - 1
-        #index = step - 20
-        # if self.prev_action:
-        #     self.diff = target_lataccel - current_lataccel
-        #     if abs(self.diff) > self.threshold and step >= 110 and index >= self.largest_index:
-        #         self.largest_index = index
-        #         self.stopped = True
         self.prev_action = action
         return action
 
-def run_simulation(data_path, tensor_data, largest_index, threshold):
-    # Create simulator
-    SIM = tinyphysics.TinyPhysicsSimulator(tinyphysicsmodel, str(data_path), controller=Controller(replay_data=tensor_data, largest_index=largest_index, threshold=threshold), debug=False)
+# Function to run a single simulation
+def run_simulation(data_path, tensor_data, largest_index, threshold, model_path):
+    # Create thread-local TinyPhysicsModel and Controller instance
+    tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
+    controller = Controller(replay_data=tensor_data, largest_index=largest_index, threshold=threshold)
 
-    # Iterate through data rows (where steering was active)
+    SIM = tinyphysics.TinyPhysicsSimulator(
+        tinyphysicsmodel,
+        str(data_path),
+        controller=controller,  # Pass a unique Controller instance
+        debug=False
+    )
+
     for _ in range(20, len(SIM.data)):
         SIM.step()
         if SIM.controller.stopped:
             return SIM.controller.largest_index, SIM.controller.diff, SIM.controller.prev_action, SIM.compute_cost()['total_cost']
     return 579, 0.0, 0.0, SIM.compute_cost()['total_cost']
 
-def plot_adjusted_vs_original_torque(original_torque, adjusted_torque):
-    """
-    Plots the original torque, adjusted torque, and the fitted spline, along with the accel differences.
-
-    :param original_torque: The original torque values.
-    :param adjusted_torque: The adjusted torque values before spline fitting.
-    """
-    steps = np.arange(len(original_torque))
-
-    plt.figure(figsize=(12, 8))
-
-    # Plot original torque
-    plt.plot(steps, original_torque, label='Original Torque', color='blue', linewidth=1.5)
-
-    # Plot final smoothed torque
-    plt.plot(steps, adjusted_torque, label='Adjusted Torque (Solved)', color='red', linewidth=1.5)
-
-    plt.xlabel('Step')
-    plt.ylabel('Value / %')
-    plt.title('Torque Comparison and Lateral Acceleration Difference (as %)')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-def optimize_inside_sim(file_name, mode, tensor_data):
+# Function to optimize torque adjustments
+def optimize_inside_sim(file_path, mode, progress_position):
+    file_name = os.path.basename(file_path)
     data_file = os.path.splitext(file_name)[0]
     data_path = os.path.join("../../data", f"{data_file}.csv")
-    original_data = copy.deepcopy(tensor_data)
+    tensor_data = np.load(file_path)
 
-    # Get initial total cost
-    _, _, _, lowest_cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0)
-    print(f"Optimize {data_file} (starting cost: {lowest_cost})")
+    _, _, _, lowest_cost = run_simulation(data_path, tensor_data.copy(), largest_index=0, threshold=0, model_path=model_path)
 
-    num_iterations = 3
-    index_range = 6
-
-    # Define the discrete torque levels
-    torques = np.linspace(-2.5, 2.5, 256)
+    num_iterations = 1
+    index_range = 2
 
     for iteration in range(num_iterations):
-        print(f"Iteration {iteration+1}/{num_iterations}")
-        pbar = tqdm(range(80, len(tensor_data)), dynamic_ncols=True)
-        for idx in pbar:
-            current_torque = tensor_data[idx]
-
-            # Find the index in torques closest to current_torque
-            torque_idx = np.argmin(np.abs(torques - current_torque))
-
-            # Define the range of torque indices to try
-            candidate_indices = np.arange(torque_idx - index_range, torque_idx + index_range + 1)
-
-            # Ensure indices are within bounds
-            candidate_indices = candidate_indices[(candidate_indices >= 0) & (candidate_indices < len(torques))]
-
-            # Run simulation
-            _, _, _, cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0)
-            pbar.set_postfix(cost=cost)
-            best_torque = current_torque
-            best_cost = cost
-
-            for candidate_idx in candidate_indices:
-                adjusted_torque = torques[candidate_idx]
-
-                # Create a copy of tensor_data with adjusted torque at idx
-                tensor_data_adjusted = tensor_data.copy()
-                tensor_data_adjusted[idx] = adjusted_torque
+        with tqdm(range(80, len(tensor_data) - 80), desc=f"Optimizing {file_name}", position=1, leave=False, disable=False) as pbar:
+            for idx in pbar:
+                current_torque = tensor_data[idx]
+                torque_idx = np.argmin(np.abs(torques - current_torque))
+                candidate_indices = np.arange(torque_idx - index_range, torque_idx + index_range + 1)
+                candidate_indices = candidate_indices[(candidate_indices >= 0) & (candidate_indices < len(torques))]
 
                 # Run simulation
-                _, _, _, cost = run_simulation(data_path, tensor_data_adjusted, largest_index=0, threshold=0)
+                _, _, _, cost = run_simulation(data_path, tensor_data.copy(), largest_index=0, threshold=0, model_path=model_path)
+                best_torque = current_torque
+                best_cost = cost
 
-                if best_cost is None or cost < best_cost:
-                    best_cost = cost
-                    best_torque = adjusted_torque
-                    pbar.set_postfix(cost=cost)
+                for candidate_idx in candidate_indices:
+                    adjusted_torque = torques[candidate_idx]
+                    tensor_data_adjusted = tensor_data.copy()
+                    tensor_data_adjusted[idx] = adjusted_torque
 
-            # Update tensor_data with best_torque
-            tensor_data[idx] = best_torque
+                    _, _, _, cost = run_simulation(data_path, tensor_data_adjusted, largest_index=0, threshold=0, model_path=model_path)
 
-        # After iterating over dataset once, get total cost
-        _, _, _, total_cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0)
+                    if best_cost is None or cost < best_cost:
+                        best_cost = cost
+                        best_torque = adjusted_torque
+
+                tensor_data[idx] = best_torque
+                pbar.set_postfix(orig_cost=lowest_cost, new_cost=best_cost, diff=lowest_cost - best_cost, data=data_path)
+                #print(f"{data_file}: best_cost: {best_cost}, lowest_cost: {lowest_cost}")
+
+        _, _, _, total_cost = run_simulation(data_path, tensor_data, largest_index=0, threshold=0, model_path=model_path)
         print(f"Total cost after iteration {iteration+1}: {total_cost}")
         if total_cost < lowest_cost:
-            print(f"Improved total cost from {lowest_cost} to {total_cost}")
             lowest_cost = total_cost
-            # Save optimized data
             if mode == 'optimize':
-                solved_file_name = f"{data_file}.npy"  # Save as .npy since tensor_data is a numpy array
+                solved_file_name = f"{data_file}.npy"
                 output_path = os.path.join(solved_dir, solved_file_name)
                 np.save(output_path, tensor_data)
         else:
-            print(f"No improvement in total cost. Stopping optimization.")
-            # Optionally, break out of the loop if no improvement
             break
 
-    # Optionally, plot the torque adjustments
-    # if mode == 'optimize':
-    #     # Plot the original torque data with the adjusted torque
-    #     original_torque = np.array([row[1] for row in original_data])
-    #     adjusted_torque = np.array([row[1] for row in tensor_data])
-    #     plot_adjusted_vs_original_torque(original_torque, adjusted_torque)
-
-def optimize_simulations(mode='print', file_offset=0):
-    # Ensure the solved directory exists
+# Main optimization function with threading
+def optimize_simulations(mode='optimize', file_offset=0):
     if not os.path.exists(solved_dir):
         os.makedirs(solved_dir)
 
-    # Loop through each file in the simulations directory
-    for filename in sorted(os.listdir(simulations_dir))[file_offset:]:
-        if filename.endswith('.npy'):  # Assuming tensors are saved with a .pt extension
-            file_path = os.path.join(simulations_dir, filename)
-            solved_path = os.path.join(solved_dir, filename)
+    files = sorted([f for f in os.listdir(simulations_dir) if f.endswith('.npy')])[file_offset:]
+    solved_files = sorted([f for f in os.listdir(solved_dir) if f.endswith('.npy')])[file_offset:]
+    file_paths = [os.path.join(simulations_dir, f) for f in files if f not in solved_files]
 
-            # Load the tensor from the file
-            if not os.path.exists(solved_path):
-                tensor_data = np.load(file_path)
-
-                # Optimize or print the actions in the tensor_data
-                optimize_inside_sim(filename, mode, tensor_data)
-
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        with tqdm(total=len(file_paths), desc="Optimizing simulations", position=0, leave=False, disable=False) as outer_pbar:
+            futures = [
+                executor.submit(optimize_inside_sim, file_path, mode, i + 1)
+                for i, file_path in enumerate(file_paths)
+            ]
+            for future in futures:
+                future.result()
+                outer_pbar.update(1)
 
 if __name__ == "__main__":
     import argparse
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Optimize or print simulation data.")
-    parser.add_argument('--mode', type=str, default='print', choices=['print', 'optimize'],
+    parser.add_argument('--mode', type=str, default='optimize', choices=['optimize', 'print'],
                         help="Mode: 'print' to display ratios and predictions, 'optimize' to save optimized tensors.")
     parser.add_argument('--file_offset', type=int, default=0,
                         help="File Offset: offset the starting file index.")
