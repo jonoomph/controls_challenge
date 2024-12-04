@@ -920,11 +920,12 @@
 
     REVERT NN back to 80, batch_size=44, window_size=30, hidden_size=80, clamp_min=-4, clamp_max=1)
     CHANGE INPUT (a_ego to absolute), RECORD NEW REPLAYS & OPTIMIZE
-    23: (100)
-    23: (5000)
+    23: test	0.524	18.025	44.241 (100)
+    23: test	0.535	18.128	44.860 (200)
+    23: test	0.572	19.446	48.048 (5000)
     24: test	0.531	18.056	44.607 (100)
     24: test	0.539	18.071	45.024 (200)
-    24: test	0.572	19.376	47.983 (5000, NEW HIGH SCORE!!! +3.376)
+    24: test	0.572	19.376	47.983 (5000, NEW HIGH SCORE!!! +3.376 - RANK #1)
     25: test	0.530	17.941	44.460 (100)
     25: test	0.541	18.024	45.091 (200)
     25: test	0.577	19.327	48.189 (5000, +3.729)
