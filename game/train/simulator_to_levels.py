@@ -32,6 +32,7 @@ def parse_and_save_levels(input_file, output_file):
 
     # Remove files in ../data that are not in levels_list
     remove_unused_levels(levels_list, "../data")
+    remove_unused_levels(levels_list, "../data-optimized")
 
 def remove_unused_levels(levels_list, data_dir):
     # Convert levels list to a set for faster lookups
