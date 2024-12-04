@@ -119,7 +119,7 @@ class TinyPhysicsSimulator:
     self.target_future = None
     self.current_lataccel = self.current_lataccel_history[-1]
     seed = int(md5(self.data_path.replace("../", "").encode()).hexdigest(), 16) % 10**4
-    self.rng = npr.default_rng(seed)
+    self.rng = np.random.RandomState(seed)
     self.sim_model.rng = self.rng
 
   def get_data(self, data_path: str) -> pd.DataFrame:

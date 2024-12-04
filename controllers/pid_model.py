@@ -12,7 +12,7 @@ class Controller(BaseController):
     def correct(self, action):
         pass
 
-    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-bkPds-29.onnx"):
+    def __init__(self, window_size=30, model_path="/home/jonathan/apps/controls_challenge/game/train/onnx/model-wONff-24.onnx"):
         """
         Initialize the controller with a specified ONNX model and time-series window size.
 
@@ -69,9 +69,7 @@ class Controller(BaseController):
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
             'v_ego': [self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
-            'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
-            'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) - self.average(
-                future_plan.roll_lataccel[start:end])) for start, end in future_segments],
+            'a_ego': [self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
         }
 
         # Previous steering torque

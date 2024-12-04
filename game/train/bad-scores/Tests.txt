@@ -890,3 +890,64 @@
     26: test	0.539	17.876	44.846 (100)
     27: test	0.543	17.800	44.954 (100)
     28: test	0.545	17.741	45.012 (100)
+
+    ADDING 27 MORE under performing controller levels
+    16: test	0.539	18.294	45.253 (100)
+    17: test	0.534	18.174	44.864 (100)
+    18: test	0.534	18.102	44.824 (100)
+    19: test	0.532	18.029	44.605 (100)
+    20: test	0.534	17.961	44.643 (100)
+    21: test	0.534	17.882	44.590 (100)
+    22: test	0.537	17.908	44.764 (100)
+    23: test	0.537	17.796	44.671 (100)
+    24: test	0.542	17.717	44.839 (100)
+    25: test	0.546	17.668	44.954 (100)
+    26: test	0.551	17.620	45.151 (100)
+    27: test	0.557	17.553	45.413 (100)
+
+    NN 84, batch_size=44, window_size=33, hidden_size=84, clamp_min=-4, clamp_max=1)
+    Got worse, maybe due to unneeded extra window size, or larger NN causes memorizing noise
+    14: test	0.560	19.141	47.155 (100)
+    17: test	0.571	18.957	47.495 (100)
+    21: test	0.614	18.574	49.259 (100)
+    25: test	0.646	18.388	50.685 (100)
+
+    NN 79, batch_size=44, window_size=25, hidden_size=79, clamp_min=-4, clamp_max=1)
+    Trying to shrink both NN size and window size (just a bit)
+    10: test	0.596	18.274	48.062 (100)
+    19: test	0.566	17.893	46.176 (100)
+    20: test	0.579	17.854	46.811 (100)
+
+    REVERT NN back to 80, batch_size=44, window_size=30, hidden_size=80, clamp_min=-4, clamp_max=1)
+    CHANGE INPUT (a_ego to absolute), RECORD NEW REPLAYS & OPTIMIZE
+    23: (100)
+    23: (5000)
+    24: test	0.531	18.056	44.607 (100)
+    24: test	0.539	18.071	45.024 (200)
+    24: test	0.572	19.376	47.983 (5000, NEW HIGH SCORE!!! +3.376)
+    25: test	0.530	17.941	44.460 (100)
+    25: test	0.541	18.024	45.091 (200)
+    25: test	0.577	19.327	48.189 (5000, +3.729)
+    26: test	0.539	17.935	44.878 (100)
+    26: test	0.546	17.961	45.264 (200)
+    26: test	0.581	19.271	48.339 (5000)
+    27: test	0.541	17.828	44.882 (100)
+    28: test	0.546	17.779	45.069 (100)
+    29: test	0.551	17.716	45.241 (100)
+    30: test	0.556	17.683	45.473 (100)
+
+    BEFORE REPLAY LEVELS & LITE OPTIMIZING
+    PID-EXPERIMENTAL: 53 wins
+    PID-REPLAY: 57 wins
+    PID-TOP: 60 wins
+    PID-FF: 72 wins
+    PID: 6 wins
+    PID-FUTURE: 1 wins
+
+    AFTER
+    PID-TOP: 58 wins
+    PID-EXPERIMENTAL: 50 wins
+    PID-REPLAY: 68 wins
+    PID-FF: 70 wins
+    PID: 5 wins
+    PID-FUTURE: 1 wins

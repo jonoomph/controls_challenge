@@ -5,7 +5,7 @@ from . import BaseController
 import numpy as np
 
 class Controller(BaseController):
-    def __init__(self, level_num=8335, torques=None):
+    def __init__(self, level_num=3214, torques=None):
         level_file_path = (f'/home/jonathan/apps/controls_challenge/game/data-optimized/{level_num:05}.npy',
                            f'/home/jonathan/apps/controls_challenge/game/data/{level_num:05}.npy')
         if torques is not None and len(torques) > 0:

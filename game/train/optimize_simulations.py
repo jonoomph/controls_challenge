@@ -110,7 +110,7 @@ def optimize_simulations(mode='optimize', file_offset=0):
     solved_files = sorted([f for f in os.listdir(solved_dir) if f.endswith('.npy')])[file_offset:]
     file_paths = [os.path.join(simulations_dir, f) for f in files if f not in solved_files]
 
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=7) as executor:
         with tqdm(total=len(file_paths), desc="Optimizing simulations", position=0, leave=False, disable=False) as outer_pbar:
             futures = [
                 executor.submit(optimize_inside_sim, file_path, mode, i + 1)

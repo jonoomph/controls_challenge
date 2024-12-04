@@ -51,9 +51,7 @@ class Controller:
             'lataccel': [current_lataccel - self.average(future_plan.lataccel[start:end]) for start, end in future_segments],
             'roll': [state.roll_lataccel - self.average(future_plan.roll_lataccel[start:end]) for start, end in future_segments],
             'v_ego': [self.normalize_v_ego(self.average(future_plan.v_ego[start:end])) for start, end in future_segments],
-            'a_ego': [state.a_ego - self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
-            'lataccel_roll': [current_lataccel - (self.average(future_plan.lataccel[start:end]) -
-                                                  self.average(future_plan.roll_lataccel[start:end])) for start, end in future_segments],
+            'a_ego': [self.average(future_plan.a_ego[start:end]) for start, end in future_segments],
         }
 
         # Previous steering torque
@@ -73,9 +71,9 @@ class Controller:
         # Override initial steer commands
         if not math.isnan(steer):
             action = steer
-        else:
-            # Store transition in the replay buffer
-            self.store_transition(state_input, action)
+
+        # Store transition in the replay buffer
+        self.store_transition(state_input, action)
 
         self.prev_actions.append(action)
         return action
@@ -106,7 +104,7 @@ def start_training(num_files=99):
     # Append missing levels (PID ONLY DATA)
     for missing_level in [
                           # ADDITIONAL LEVELS (BAD SCORES)
-                          2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 1387, 3712, 2931, 2894, 4661,
+                          2531, 264, 3132, 2105, 3659, 3830, 1037, 526, 1947, 4803, 3712, 2931, 2894, 4661,
                           1789, 3214, 4097, 1611, 2675, 4731, 1705, 188, 1809, 4178, 3008, 3817, 1703, 1191, 1716,
 
                           # UNDER PERFORMING MODEL LEVELS
@@ -116,6 +114,8 @@ def start_training(num_files=99):
                           4347, 3886, 4045, 2222, 3956, 3580, 1180,
                           522, 4025, 2618, 1788, 3747, 1936, 1667, 3814, 1119, 196, 1593, 3877, 3285, 4483, 3710, 1482, 4292, 2884, 1664,
                           425, 3651, 3647, 3695, 1135, 79, 380, 853,
+                          368, 4877, 259, 3259, 1221, 849, 1747, 966, 4496, 114, 4839, 774, 2198, 1390, 1777, 4065, 3240, 4687, 1723,
+                          4412, 491, 2978, 3200, 104, 2738,
 
                           # PLOTTED LEVELS MISSING FROM DIST
                           2675, 19, 2886, 4645, 2516, 3182, 3397, 4949, 2940, 3547, 4192, 4604, 4566, 3839, 4277,
@@ -163,9 +163,12 @@ def start_training(num_files=99):
                 previous_cost = 0.0
                 cost_history = []  # Store cost history for weighted calculations
                 weights = [0.028, 0.141, 0.831]  # Influence weights for the 3 time steps
+                torques = []
 
                 for _ in range(20, len(sim.data)):
                     sim.step()
+                    if sim.controller.replay_buffer:
+                        torques.append(sim.controller.replay_buffer[-1][1])
 
                     if _ >= 101:
                         total_cost = sim.compute_cost().get('total_cost')
@@ -196,6 +199,9 @@ def start_training(num_files=99):
                 cost = sim.compute_cost()
                 scores[controller_name] = cost["total_cost"]
                 replay_buffers[controller_name] = sim.controller.replay_buffer
+
+                # Save sim data into game level data
+                #np.save(os.path.join("../data", file_name), torques)
 
             # Determine the best controller
             best_controller_name = min(scores, key=scores.get)
