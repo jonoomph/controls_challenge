@@ -952,3 +952,30 @@
     PID-FF: 70 wins
     PID: 5 wins
     PID-FUTURE: 1 wins
+
+    AFTER ANOTHER ROUND OF REPLAYS
+    PID-REPLAY: 74 wins
+    PID-EXPERIMENTAL: 47 wins
+    PID-TOP: 55 wins
+    PID-FF: 69 wins
+    PID: 5 wins
+    PID-FUTURE: 1 wins
+
+    MORE REPLAYS and OPTIMIZATIONS (removed level 522)
+    23: test	0.525	18.074	44.320 (100)
+    23: test	0.576	19.593	48.399 (5000)
+    24: test	0.526	17.980	44.284 (100)
+    24: test	0.577	19.520	48.379 (5000, got worse)
+    25: test	0.529	17.932	44.396 (100)
+    25: test	0.584	19.494	48.703 (5000)
+
+    ADDED back level 522 (all worse)
+    19: test	0.514	18.304	43.992 (100)
+    20: test	0.515	18.198	43.946 (100)
+    20: test	0.579	19.847	48.811 (5000)
+    21: test	0.515	18.170	43.939 (100)
+    22: test	0.519	18.080	44.006 (100)
+    22: test	0.576	19.697	48.512 (5000)
+    23: test	0.522	18.031	44.148 (100)
+    24: test	0.529	18.011	44.451 (100)
+    24: test	0.578	19.555	48.447 (5000)
