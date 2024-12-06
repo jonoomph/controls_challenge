@@ -140,6 +140,7 @@ def start_training(num_files=99):
 
             # Dictionary to store scores and replay buffers
             scores = {}
+            torques = {}
             replay_buffers = {}
 
             # Run simulations with each controller and store scores
@@ -163,12 +164,12 @@ def start_training(num_files=99):
                 previous_cost = 0.0
                 cost_history = []  # Store cost history for weighted calculations
                 weights = [0.028, 0.141, 0.831]  # Influence weights for the 3 time steps
-                torques = []
+                torque_list = []
 
                 for _ in range(20, len(sim.data)):
                     sim.step()
                     if sim.controller.replay_buffer:
-                        torques.append(sim.controller.replay_buffer[-1][1])
+                        torque_list.append(sim.controller.replay_buffer[-1][1])
 
                     if _ >= 101:
                         total_cost = sim.compute_cost().get('total_cost')
@@ -198,15 +199,19 @@ def start_training(num_files=99):
                 # Compute the final cost for the controller
                 cost = sim.compute_cost()
                 scores[controller_name] = cost["total_cost"]
+                torques[controller_name] = torque_list
                 replay_buffers[controller_name] = sim.controller.replay_buffer
-
-                # Save sim data into game level data
-                #np.save(os.path.join("../data", file_name), torques)
 
             # Determine the best controller
             best_controller_name = min(scores, key=scores.get)
             best_score = scores[best_controller_name]
+            best_torques = torques[best_controller_name]
             best_model_data = replay_buffers[best_controller_name]
+
+            # Save sim data into game level data
+            #if best_controller_name != "PID-REPLAY" and best_score < 100:
+                #print(f"  Saved non-replay to ./data folder: {best_score}")
+                #np.save(os.path.join("../data", file_name), best_torques)
 
             # Save the best controller's replay buffer
             save_path = f'simulations/{level_num:05d}-{best_controller_name}.pth'
