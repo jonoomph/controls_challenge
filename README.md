@@ -42,6 +42,7 @@ architecture, and optimization was a real learning process. I had many breakthro
 - The right input parameters (15 to be exact: 3 lataccel, 3 roll, 3 v_ego, 3 a_ego, and 3 previous steer torques)
 - The right output parameters (the next 2 steer torques)
 - The right window size (30 input states - 10 per second - 3 seconds of input data)
+- For [more info](game/train/README.md) on training the neural network.
 ![training.png](imgs/training.png)
 
 ### Results for `pid_model`
