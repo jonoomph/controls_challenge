@@ -70,7 +70,10 @@ def optimize_inside_sim(file_path, mode, progress_position):
                 candidate_indices = np.arange(torque_idx - index_range, torque_idx + index_range + 1)
                 candidate_indices = candidate_indices[(candidate_indices >= 0) & (candidate_indices < len(torques))]
 
-                # Run simulation
+                # Remove the current torque index from candidate indices
+                candidate_indices = candidate_indices[candidate_indices != torque_idx]
+
+                # Run simulation for the current state to get the baseline cost
                 _, _, _, cost = run_simulation(data_path, tensor_data.copy(), largest_index=0, threshold=0, model_path=model_path)
                 best_torque = current_torque
                 best_cost = cost
