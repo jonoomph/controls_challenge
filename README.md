@@ -24,14 +24,16 @@ This neural network based controller outperforms all other known controllers. Th
 ![controllers.png](imgs/controllers.png)
 
 ### 2D Racing Game
-Instead of relying only on PID data for training this model, I built a 2D racing game to collect human driving data. This is compatable with the keyboard and a Logitech steering wheel. This allows me to collect more realistic human driving data, for the most complex and dynamic trajectories. 
+Instead of relying only on PID data for training this model, I built a 2D racing game to collect human driving data. This is compatible with the keyboard and a Logitech steering wheel. This allows me to collect more realistic human driving data, for the most complex and dynamic trajectories. 
 ![game.png](imgs/game.png)
 ![game1.png](imgs/game1.png)
 
 ### TinyPhysics Improvements
-Improved graphing to include future states as dotted lines. This was useful to view the stability of future states,
-before deciding to build a 2D racing sim based mostly on these future values. Also, improved the simulator to pass the initial steer values to each controller,
+- Improved graphing to include future states as dotted lines. This was useful to view the stability of future states,
+before deciding to build a 2D racing sim based mostly on these future values. 
+- Improved the simulator to pass the initial steer values to each controller,
 to help controllers smoothly take over control of the vehicle.
+- Improved random number generation to be multi-thread friendly, so we can run multiple simulations at the same time.
 ![tinyphysics.png](imgs/tinyphysics.png)
 
 ### Results for `pid_model`
