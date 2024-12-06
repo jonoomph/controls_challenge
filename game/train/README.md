@@ -9,6 +9,8 @@ The `levels.json` and `high-score.json` files are also located in this folder.
 python3 run_game.py
 ```
 
+![game.png](../../imgs/game.png)
+
 ## Optimize Data (Optional)
 Some game data can be further optimized by running the optimize data script. This
 iterates through the `game/data` folder, and finds any files not yet optimized (i.e. in the `game/data-optimized` folder).
