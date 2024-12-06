@@ -28,10 +28,15 @@ Instead of relying only on PID data for training this model, I built a 2D racing
 ![game.png](imgs/game.png)
 ![game1.png](imgs/game1.png)
 
-### Graph Improvements
+### TinyPhysics Improvements
 Improved graphing to include future states as dotted lines. This was useful to view the stability of future states,
-before deciding to build a 2D racing sim based mostly on these future values.
+before deciding to build a 2D racing sim based mostly on these future values. Also, improved the simulator to pass the initial steer values to each controller,
+to help controllers smoothly take over control of the vehicle.
 ![tinyphysics.png](imgs/tinyphysics.png)
+
+### `pid_model` Results
+Proof that a neural network can surpass all other PID controller designs.
+![results.png](imgs/results.png)
 
 ## Getting Started
 We'll be using a synthetic dataset based on the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset for this challenge. These are actual car and road states from [openpilot](https://github.com/commaai/openpilot) users.
