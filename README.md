@@ -26,6 +26,7 @@ This neural network based controller outperforms all other known controllers. Th
 ### 2D Game
 Instead of relying only on PID data for training this model, I built a 2D racing game to collect human driving data. This is compatable with the keyboard and a Logitech steering wheel. This allows me to collect more realistic human driving data, for the most complex and dynamic trajectories. 
 ![game.png](imgs/game.png)
+![game1.png](imgs/game1.png)
 
 ## Getting Started
 We'll be using a synthetic dataset based on the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset for this challenge. These are actual car and road states from [openpilot](https://github.com/commaai/openpilot) users.
