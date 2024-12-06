@@ -131,7 +131,7 @@ if __name__ == "__main__":
     costs.append({'controller': 'test', 'file': data_file.name, **test_cost})
     costs.append({'controller': 'baseline', 'file': data_file.name, **baseline_cost})
 
-  for controller_cat, controller_type in [('test', args.test_controller)]: #('baseline', args.baseline_controller),
+  for controller_cat, controller_type in [('baseline', args.baseline_controller), ('test', args.test_controller)]:
     print(f"Running batch rollouts => {controller_cat} controller: {controller_type}")
     rollout_partial = partial(run_rollout, controller_type=controller_type, model_path=args.model_path, debug=False)
     results = process_map(rollout_partial, files[SAMPLE_ROLLOUTS:], max_workers=14, chunksize=10)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
   fieldnames = ['controller', 'file', 'jerk_cost', 'lataccel_cost', 'total_cost']
 
   # Write the sorted costs to a CSV file
-  csv_file_name = 'eval.csv'
+  csv_file_name = 'game/results/eval.csv'
   with open(csv_file_name, 'w', newline='') as csvfile:
       writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
