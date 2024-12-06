@@ -7,7 +7,7 @@ import numpy as np
 existing_simulations = [sim.split("-")[0] + ".csv" for sim in os.listdir("simulations")]
 
 # Load the single CSV file into a DataFrame
-data = pd.read_csv("../../eval-pids-5000.csv")
+data = pd.read_csv("../results/eval-pids-5000.csv")
 
 # Pivot the data to compare controllers
 pivoted_data = data.pivot(index='file', columns='controller', values=['jerk_cost', 'lataccel_cost', 'total_cost'])
