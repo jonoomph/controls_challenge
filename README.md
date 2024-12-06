@@ -18,6 +18,14 @@
 
 Machine learning models can drive cars, paint beautiful pictures and write passable rap. But they famously suck at doing low level controls. Your goal is to write a good controller. This repo contains a model that simulates the lateral movement of a car, given steering commands. The goal is to drive this "car" well for a given desired trajectory.
 
+## Changes to this Fork
+### New `pid_model` controller
+This neural network based controller outperforms all other known controllers. This graph illustrates the cost of all 5000 simulations across a variety of controllers, to compare their performance.
+![controllers.png](imgs/controllers.png)
+
+### 2D Game
+Instead of relying only on PID data for training this model, I built a 2D racing game to collect human driving data. This is compatable with the keyboard and a Logitech steering wheel. This allows me to collect more realistic human driving data, for the most complex and dynamic trajectories. 
+![game.png](imgs/game.png)
 
 ## Getting Started
 We'll be using a synthetic dataset based on the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset for this challenge. These are actual car and road states from [openpilot](https://github.com/commaai/openpilot) users.
