@@ -5,6 +5,8 @@ Before training the model, first run the game and collect data for all the level
 you want to include in your training run. Data is stored in the `game/data` folder.
 The `levels.json` and `high-score.json` files are also located in this folder.
 
+NOTE: Steering data is discrete (256 linear steps from -2.5 to +2.5)
+
 ```
 python3 run_game.py
 ```
