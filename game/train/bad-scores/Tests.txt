@@ -984,3 +984,6 @@
     24: test	0.526	18.080	44.386 (100)
     24: test	0.582	19.607	48.725 (5000)
     24: all worse than before
+
+    REVERTED BACK TO TOP SCORE DATA
+    24: test	0.572	19.376	47.983 (5000, RERUN of FINAL HIGH SCORE)
