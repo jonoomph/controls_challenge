@@ -28,6 +28,11 @@ Instead of relying only on PID data for training this model, I built a 2D racing
 ![game.png](imgs/game.png)
 ![game1.png](imgs/game1.png)
 
+### Graph Improvements
+Improved graphing to include future states as dotted lines. This was useful to view the stability of future states,
+before deciding to build a 2D racing sim based mostly on these future values.
+![tinyphysics.png](imgs/tinyphysics.png)
+
 ## Getting Started
 We'll be using a synthetic dataset based on the [comma-steering-control](https://github.com/commaai/comma-steering-control) dataset for this challenge. These are actual car and road states from [openpilot](https://github.com/commaai/openpilot) users.
 
