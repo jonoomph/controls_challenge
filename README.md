@@ -23,7 +23,7 @@ Machine learning models can drive cars, paint beautiful pictures and write passa
 This neural network based controller outperforms all other known controllers. This graph illustrates the cost of all 5000 simulations across a variety of controllers, to compare their performance.
 ![controllers.png](imgs/controllers.png)
 
-### 2D Game
+### 2D Racing Game
 Instead of relying only on PID data for training this model, I built a 2D racing game to collect human driving data. This is compatable with the keyboard and a Logitech steering wheel. This allows me to collect more realistic human driving data, for the most complex and dynamic trajectories. 
 ![game.png](imgs/game.png)
 ![game1.png](imgs/game1.png)
@@ -34,8 +34,8 @@ before deciding to build a 2D racing sim based mostly on these future values. Al
 to help controllers smoothly take over control of the vehicle.
 ![tinyphysics.png](imgs/tinyphysics.png)
 
-### `pid_model` Results
-Proof that a neural network can surpass all other PID controller designs.
+### Results for `pid_model`
+Proof that a neural network can surpass all other PID controller designs. Read the [full results](report.html) here.
 ![results.png](imgs/results.png)
 
 ## Getting Started
