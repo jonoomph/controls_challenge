@@ -36,6 +36,14 @@ to help controllers smoothly take over control of the vehicle.
 - Improved random number generation to be multi-thread friendly, so we can run multiple simulations at the same time.
 ![tinyphysics.png](imgs/tinyphysics.png)
 
+### Training
+This was not a very straight-forward process, lol! Finding the "right" distribution of training files, model
+architecture, and optimization was a real learning process. I had many breakthroughs along the way:
+- The right input parameters (15 to be exact: 3 lataccel, 3 roll, 3 v_ego, 3 a_ego, and 3 previous steer torques)
+- The right output parameters (the next 2 steer torques)
+- The right window size (30 input states - 10 per second - 3 seconds of input data)
+![training.png](imgs/training.png)
+
 ### Results for `pid_model`
 Proof that a neural network can surpass all other PID controller designs. Read the [full results](report.html) here.
 ![results.png](imgs/results.png)
