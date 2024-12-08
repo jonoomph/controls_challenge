@@ -34,7 +34,7 @@ class Controller(BaseController):
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer=math.inf):
         # Reset error integral and prev error when control is handed over
         self.counter += 1
-        if self.counter == 81:
+        if self.counter <= 81:
             self.error_integral = 0
             self.prev_error = 0
 
