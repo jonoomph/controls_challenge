@@ -987,3 +987,83 @@
 
     REVERTED BACK TO TOP SCORE DATA
     24: test	0.572	19.376	47.983 (5000, RERUN of FINAL HIGH SCORE)
+
+    NO INITIAL STEER:
+    > 65: test	0.686	20.958	55.248 (100)
+    > 60: test	0.673	20.822	54.452 (100)
+    > 59: test	0.672	20.793	54.409 (100, BEST SCORE)
+    > 58: test	0.673	20.818	54.458 (100)
+    > 55: test	0.675	20.863	54.588 (100)
+    > 50: test	0.687	21.051	55.405 (100)
+    > 45: test	0.695	21.129	55.903 (100)
+
+    EXPERIMENTAL PID + MODEL (step_idx filter)
+    < 105: test	0.563	18.707	46.858 (100)
+    < 106: test	0.561	18.735	46.807 (100)
+    < 107: test	0.561	18.717	46.760 (100, BEST FILTER)
+    < 107: test	0.612	20.164	50.785 (5000, 4th rank (close to 3rd))
+    < 108: test	0.562	18.731	46.829 (100)
+    < 109: test	0.564	18.759	46.946 (100)
+    < 110: test	0.563	18.707	46.858 (100)
+    < 115: test	0.564	18.714	46.926 (100)
+    < 117: test	0.566	18.721	47.024 (100)
+    < 120: test	0.568	18.756	47.141 (100)
+    < 120: test	0.622	20.218	51.318 (5000, back to 4th rank =()
+
+    EXPERIMENTAL PID + MODEL with lataccel diff
+    < 107 + 0.035: test	0.564	18.699	46.899 (100)
+    < 107 + 0.035: test	0.622	20.154	51.276 (5000)
+
+    TOP PID
+    < 105: test	0.568	18.830	47.245 (100)
+    < 107: test	0.567	18.852	47.211 (100)
+    < 109: test	0.567	18.851	47.195 (100)
+    < 120: test	0.574	18.934	47.620 (100)
+
+    EXPERIMENTAL + control signal diff
+    < 103 + 0.025: test	0.564	18.698	46.874 (100)
+    < 103 + 0.015: test	0.563	18.687	46.821 (100)
+    < 103 + 0.0155: test	0.563	18.684	46.813 (100)
+    < 103 + 0.0155 + EXPERIMENTAL RESET <= 81 + lat diff 0.0155: test	0.561	18.691	46.733 (100)
+    < 103 + same as above: test	0.614	20.124	50.815 (5000)
+    < 107 + same as above: test	0.565	18.716	46.957 (100)
+    < 107 + same as above: test	0.578	18.697	47.579 (200)
+
+    PID W FF:
+    < 105: test	0.570	18.867	47.360 (100)
+    < 107: test	0.570	18.901	47.404 (100)
+
+    MADE ALL PIDS RESET <= 81 step
+    < 103: test	0.562	18.698	46.802 (100)
+    < 104: test	0.561	18.677	46.735 (100)
+    < 104: test	0.612	20.145	50.729 (5000)
+    < 105: test	0.562	18.699	46.821 (100)
+    < 105: test	0.610	20.132	50.633 (5000, NEW HIGH SCORE: Rank #3)
+    < 105 + 3/256:  test	0.576	18.699	47.505 (200)
+    < 105 + no filter: test	0.572	18.694	47.298 (200)
+    < 106: test	0.611	20.143	50.678 (5000)
+
+    EXPERIMENTAL + lat accel diff
+    < 100 + 0.025: test	0.576	18.722	47.528 (200)
+    < 100 + 0.015: test	0.577	18.744	47.606 (200)
+    < 100 + 0.035: test	0.575	18.720	47.468 (200)
+    < 105 + none : test	0.572	18.694	47.298 (200)
+    < 105 + 0.025: test	0.579	18.707	47.674 (200)
+    < 105 + 0.025: test	0.579	18.706	47.668 (200)
+
+    EXPERIMENTS WITH INITIAL STEERS on LEVEL  03214
+    - no initial steer
+    Average lataccel_cost:  3.235, average jerk_cost:  74.12, average total_cost:  235.8
+
+    - PID + sigma + model
+    Average lataccel_cost:  3.083, average jerk_cost:  72.78, average total_cost:  226.9
+
+    - initial steer from tiny physics
+    Average lataccel_cost:  2.968, average jerk_cost:  71.56, average total_cost:  220.0
+
+    NEW CONTROLLERS:
+    - model: Requires initial steer values
+        24: test	0.531	18.056	44.607 (100)
+    - pid_model: Does not require initial steer values, and instead uses PID to initialize the model
+        24: test	0.562	18.699	46.821 (100)
+        24: test	0.610	20.132	50.633 (5000)
