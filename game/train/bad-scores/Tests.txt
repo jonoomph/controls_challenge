@@ -1064,6 +1064,21 @@
     NEW CONTROLLERS:
     - model: Requires initial steer values
         24: test	0.531	18.056	44.607 (100)
+        24: test	0.572	19.376	47.983 (5000, +3.376 - RANK #1)
     - pid_model: Does not require initial steer values, and instead uses PID to initialize the model
         24: test	0.562	18.699	46.821 (100)
-        24: test	0.610	20.132	50.633 (5000)
+        24: test	0.610	20.132	50.633 (5000, +3.812 vs 100, +2.65 vs 5000 model.py, RANK #3)
+
+    CRAZY NEW IDEA: +9 inputs (nearby torques: -2,-1,0,1,2), +9 outputs: sim score diffs
+    ALLOW the controller to choose the best predicted torque
+    00002: Experimental PID: Average lataccel_cost:  1.306, average jerk_cost:  21.83, average total_cost:  87.12
+    00002: Explore model: Average lataccel_cost:  1.156, average jerk_cost:   25.6, average total_cost:  83.38
+    00001: Experimental PID: Average lataccel_cost: 0.4484, average jerk_cost:  8.193, average total_cost:  30.61
+    00001: Explore model: Average lataccel_cost: 0.4094, average jerk_cost:  9.163, average total_cost:  29.63
+    00000: Experimental PID: Average lataccel_cost: 0.8059, average jerk_cost:  31.26, average total_cost:  71.55
+    00000: Explore model: Average lataccel_cost:  1.011, average jerk_cost:  37.05, average total_cost:  87.59
+
+    experimental (100):
+    -test	0.687	20.055	54.397
+    explore (100):
+    test	0.749	21.942	59.406
