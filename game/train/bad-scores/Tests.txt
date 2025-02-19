@@ -1090,3 +1090,10 @@
     model,00002: Average lataccel_cost: 0.8634, average jerk_cost:   22.9, average total_cost:  66.07 (no explore)
     model,00002: Average lataccel_cost: 0.8783, average jerk_cost:  24.67, average total_cost:  68.58
     exper,00002: Average lataccel_cost:  1.413, average jerk_cost:  24.57, average total_cost:  95.22
+
+    NEW DEEP TRAINING (No Steer: trained on random chunks of 500 drives per epoch, with 3 training repeats)
+    - Nearly matches the performance of the original model I am distilling
+    - No Q learning yet (this is just testing the simulation and noise code)
+    9: test	0.574	18.538	47.244 (100 tests)
+    9: test	0.620	19.728	50.744 (5000 tests)
+

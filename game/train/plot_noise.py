@@ -9,10 +9,10 @@ T = 100
 t = np.arange(T)
 
 # 1. Pure Random Noise: each step is independent
-pure_random = np.random.uniform(-10, 10, T)
+pure_random = np.random.uniform(-2.5, 2.5, T)
 
 # 2. Ornstein-Uhlenbeck Noise
-def generate_ou_noise(T, mu=0, theta=0.15, sigma=1, dt=1):
+def generate_ou_noise(T, mu=0, theta=0.15, sigma=0.05, dt=1):
     x = np.zeros(T)
     x[0] = 0
     for i in range(1, T):
@@ -28,7 +28,7 @@ target = 0
 step = 0
 for i in range(T):
     if i % 10 == 0:
-        target = np.random.uniform(-10, 10)
+        target = np.random.uniform(-2.5, 10)
         step = 0
     # Calculate linear increment to move toward target in 10 steps
     increment = (target - linear_noise[i-1]) / (10 - step) if i > 0 else 0
@@ -49,7 +49,6 @@ plt.plot(t, np.zeros(T), 'k--', label="Ideal (0)")  # ideal straight line
 
 plt.plot(t, pure_random, label="Pure Random Noise", alpha=0.7)
 plt.plot(t, ou_noise, label="Ornstein-Uhlenbeck Noise", alpha=0.7)
-plt.plot(t, linear_noise, label="Linear Interpolation Noise", alpha=0.7)
 plt.plot(t, ema_noise, label="Low-Pass Filtered Gaussian", alpha=0.7)
 
 plt.xlabel("Time step")
