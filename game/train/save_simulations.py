@@ -209,9 +209,11 @@ def start_training(num_files=99):
             best_model_data = replay_buffers[best_controller_name]
 
             # Save sim data into game level data
-            #if best_controller_name != "PID-REPLAY" and best_score < 100:
-                #print(f"  Saved non-replay to ./data folder: {best_score}")
-                #np.save(os.path.join("../data", file_name), best_torques)
+            if best_controller_name != "PID-REPLAY":
+                export_name = os.path.join("../data", file_name)
+                if not os.path.exists(export_name):
+                    print(f"  Saved non-replay to ./data folder: {best_score}")
+                    np.save(os.path.join("../data", file_name), best_torques)
 
             # Save the best controller's replay buffer
             save_path = f'simulations/{level_num:05d}-{best_controller_name}.pth'

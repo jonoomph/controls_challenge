@@ -1,9 +1,15 @@
 import os
+import sys
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 import torch
 import math
+import random
+
+# Add the parent directory to the module search path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from tinyphysics import TinyPhysicsSimulator, TinyPhysicsModel
 from controllers import replay
 import matplotlib.pyplot as plt
@@ -188,9 +194,10 @@ def explore_all_simulations():
     if not os.path.exists(explored_dir):
         os.makedirs(explored_dir)
 
-    files = sorted([os.path.join(simulations_dir, f) for f in os.listdir(simulations_dir) if f.endswith('.npy')])
+    files = [os.path.join(simulations_dir, f) for f in os.listdir(simulations_dir) if f.endswith('.npy')]
+    shuffled_files = random.sample(files, k=len(files))
 
-    for file_path in files:
+    for file_path in shuffled_files:
         explore_simulation(file_path)
 
 
