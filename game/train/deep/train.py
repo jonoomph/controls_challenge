@@ -11,10 +11,9 @@ from game.train.deep import simulations
 onnx_export_lock = Lock()
 
 
-from game.train.model import PIDControllerNet
+from game.train.deep.qmodel import PIDControllerNet
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-import os
 import random
 import string
 import warnings
