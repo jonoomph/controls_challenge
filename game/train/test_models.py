@@ -12,14 +12,15 @@ DATAFILES_START = 0
 MAX_TRAINING_ROWS = 600
 TRAINING_FILES = [3373, 3727, 2456, 955, 2605, 4200, 2134, 2934, 4505, 584, 3656, 3804, 3774, 2157, 2281, 2116, 3545, 2141, 4859, 2903, 2197, 4871, 3564, 3576, 2224, 3281, 2326, 3481, 3519, 4085, 2399, 4872, 2430, 4050, 4067, 4251, 1226, 3217, 1784, 2920, 3361, 2757, 1048, 1781, 1046, 4347, 3091, 4574, 3886, 2506, 4045, 805, 2222, 3956, 4588, 3149, 3580, 1180, 4732, 3003]
 
-tiny_model_path = Path('../../models/tinyphysics.onnx')
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+tiny_model_path = Path(os.path.join(ROOT, 'models', 'tinyphysics.onnx'))
 tinyphysicsmodel = tinyphysics.TinyPhysicsModel(tiny_model_path, debug=False)
 
 
 def process_file(model_name, model_path, file_index, window_size, tinyphysicsmodel):
     try:
         TRAINING_FILE = TRAINING_FILES[file_index]
-        data_path = f'../../data/{TRAINING_FILE:05d}.csv'
+        data_path = os.path.join(ROOT, 'data', f'{TRAINING_FILE:05d}.csv')
 
         # Create simulator
         controller = Controller(model_path=model_path, window_size=window_size)

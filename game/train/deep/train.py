@@ -199,7 +199,7 @@ def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_s
         epoch_loss = 0
 
         # Get all simulations
-        simulation_results = simulations.get_simulations(max_noise=0.0, num_sims=500)
+        simulation_results = simulations.get_simulations(max_noise=0.0, num_sims=5)
 
         for i in range(5):
             for file_name, simulation_data in simulation_results.items():
