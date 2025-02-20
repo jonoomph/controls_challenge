@@ -1,133 +1,50 @@
-import threading
-from threading import Lock
+# train.py
+import string
 
 import torch
 import torch.nn as nn
-
-from game.train import test_models
-from game.train.deep import simulations
-
-# Global lock for ONNX export
-onnx_export_lock = Lock()
-
-
-from game.train.deep.qmodel import PIDControllerNet
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import random
-import string
-import warnings
-warnings.filterwarnings("ignore", message=".*weights_only=False.*")
-warnings.filterwarnings("ignore", message=".*variable length with LSTM.*")
+import numpy as np
+from collections import deque
+from pathlib import Path
 
-import multiprocessing
+from tqdm import tqdm
 
-# Get the total number of CPU cores
-total_cores = multiprocessing.cpu_count()
-test_threads = 4
-leave_threads = 2
-EXPORT_INTERVAL = 5
+from qmodel import QSteeringNet
+import simulations
+import config
 
-# Set the number of threads to use (total cores - 4)
-num_threads = max(1, total_cores - test_threads - leave_threads)
-torch.set_num_threads(num_threads)
-
-print(f"Total Cores: {total_cores}")
-print(f"Using {num_threads} threads for PyTorch.")
-print(f"Using {test_threads} threads for Validation testing.")
-
-from concurrent.futures import ThreadPoolExecutor
-TESTING_EXECUTOR=ThreadPoolExecutor(max_workers=test_threads)
-
+# Set device and seeds.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Using device: {device}")
+random.seed(config.seed)
+np.random.seed(config.seed)
+torch.manual_seed(config.seed)
+
+# Global replay buffer (holds transitions from simulations)
+replay_buffer = deque(maxlen=config.replay_buffer_size)
 
 
-class TrainingRun:
-    def __init__(self, epoch, window_size, batch_size, optimizer, model, loss_fn, clamp_min, clamp_max):
-        self.epoch = epoch
-        self.total_loss = 0
-        self.predictions = []
-        self.solved = []
-        self.steer_costs = []
-        self.window_size = window_size
-        self.input_window = []
-        self.output_window = []
-        self.cost_window = []
-        self.cost_total_window = []
-        self.batch_size = batch_size
-        self.optimizer = optimizer
-        self.model = model
-        self.loss_fn = loss_fn
-        self.clamp_min=clamp_min
-        self.clamp_max=clamp_max
-
-    def process_batch(self):
-        if len(self.predictions) >= self.batch_size:
-            # Shuffle the batch
-            combined = list(zip(self.predictions, self.solved, self.steer_costs))
-            random.shuffle(combined)
-            shuffled_predictions, shuffled_solved, shuffled_costs = zip(*combined)
-
-            # Stack the predictions, solved data, and costs
-            predictions_tensor = torch.cat(shuffled_predictions).to(device)
-            solved_tensor = torch.tensor(shuffled_solved, dtype=torch.float32).to(device)
-            steer_cost_tensor = torch.tensor(shuffled_costs, dtype=torch.float32).unsqueeze(1).to(device)
-
-            # Clamp steer costs to the specified range
-            steer_cost_tensor = torch.clamp(steer_cost_tensor, min=self.clamp_min, max=self.clamp_max)
-
-            # Linearly flip weights so -3.0 → 1.0, 1.0 → 0.0
-            weight_tensor = 1.0 - (steer_cost_tensor - self.clamp_min) / (self.clamp_max - self.clamp_min)
-
-            # Apply the weights to the loss
-            weighted_loss = (self.loss_fn(predictions_tensor, solved_tensor) * weight_tensor).mean()
-
-            # Backpropagation: clear the gradients, perform backpropagation, and update the weights
-            self.optimizer.zero_grad()
-            weighted_loss.backward()
-            self.optimizer.step()
-
-            # Clear the lists for the next batch
-            self.predictions.clear()
-            self.solved.clear()
-            self.steer_costs.clear()
-
-            # Log the loss
-            self.total_loss += weighted_loss.item()
-
-    def train(self, state_input, steer_torques, steer_cost_diff, steer_cost_total):
-
-        # Store the current input and output in their respective windows
-        self.input_window.append(state_input)
-        self.output_window.append(steer_torques)
-        self.cost_window.append(steer_cost_diff)
-        self.cost_total_window.append(steer_cost_total)
-
-        # Process only if we have enough data for one window
-        if len(self.input_window) >= self.window_size:
-            # Stack the inputs to form a windowed tensor
-            input_tensor = torch.stack(self.input_window[-self.window_size:]).unsqueeze(0).squeeze(2)
-
-            # Get the model output
-            model_output = self.model(input_tensor)
-
-            # Store the prediction and the PID output
-            self.predictions.append(model_output)
-            self.solved.append(self.output_window[-1][0:2])
-            self.steer_costs.append(self.cost_window[-1])
-
-            # Process the batch (if needed)
-            self.process_batch()
-
-            # Slide the window
-            self.input_window.pop(0)
-            self.output_window.pop(0)
-            self.cost_window.pop(0)
-            self.cost_total_window.pop(0)
+def sample_batch(buffer, batch_size):
+    batch = random.sample(buffer, batch_size)
+    states, actions, rewards, next_states, dones = zip(*batch)
+    states = torch.cat(states).to(device)
+    actions = torch.tensor(actions, dtype=torch.long).unsqueeze(1).to(device)
+    rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(device)
+    # For next_states, if a transition is missing next_state, use a zero tensor.
+    next_states_tensor = []
+    for ns in next_states:
+        if ns is None:
+            next_states_tensor.append(torch.zeros(1, config.window_size, config.input_size))
+        else:
+            # Assume ns already has shape (1, input_size); expand to (1, window_size, input_size) if needed.
+            next_states_tensor.append(ns)
+    next_states = torch.cat(next_states_tensor).to(device)
+    dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1).to(device)
+    return states, actions, rewards, next_states, dones
 
 
-def export_model(epoch=None, prefix="model", window_size=7, model=None, optimizer=None, logging=True):
+def export_model(epoch=None, prefix="model", window_size=7, model=None, logging=True):
     # Save the trained model to an ONNX file
     model_name = f"onnx/model-{prefix}-{epoch}.onnx"
     if logging:
@@ -136,131 +53,86 @@ def export_model(epoch=None, prefix="model", window_size=7, model=None, optimize
     # Adjust the dummy input size according to the model's expected input size
     dummy_input = torch.randn(1, window_size, model.input_size, requires_grad=True).to(device)
 
-    # Serialize ONNX export using a global lock
-    with onnx_export_lock:
-        try:
-            # Export the model to ONNX
-            torch.onnx.export(
-                model,
-                dummy_input,
-                model_name,
-                export_params=True,
-                opset_version=11,
-                do_constant_folding=True,
-                input_names=['input'],
-                output_names=['output'],
-                dynamic_axes={'input': {0: 'batch_size', 1: 'window_size'}, 'output': {0: 'batch_size'}}
-            )
-        except Exception as e:
-            print(f"Error during ONNX export for epoch {epoch}: {e}")
-            raise
+    try:
+        # Export the model to ONNX
+        torch.onnx.export(
+            model,
+            dummy_input,
+            model_name,
+            export_params=True,
+            opset_version=11,
+            do_constant_folding=True,
+            input_names=['input'],
+            output_names=['output'],
+            dynamic_axes={'input': {0: 'batch_size', 1: 'window_size'}, 'output': {0: 'batch_size'}}
+        )
+    except Exception as e:
+        print(f"Error during ONNX export for epoch {epoch}: {e}")
+        raise
 
-
-def start_training(epochs=65, window_size=7, logging=True, analyze=True, batch_size=36, lr=0.0001,
-                   loss_fn=nn.MSELoss(), seed=2002, hidden_size=80, clamp_min=-5, clamp_max=1):
+def main():
     prefix = ''.join(random.choice(string.ascii_letters) for _ in range(5))
 
-    # Set random seed
-    random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)  # If using GPU
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    # Create Q-network.
+    q_network = QSteeringNet(
+        input_size=config.input_size,
+        hidden_size=config.hidden_size,
+        num_layers=config.num_layers,
+        window_size=config.window_size,
+        action_space=config.action_space
+    ).to(device)
+    target_network = QSteeringNet(
+        input_size=config.input_size,
+        hidden_size=config.hidden_size,
+        num_layers=config.num_layers,
+        window_size=config.window_size,
+        action_space=config.action_space
+    ).to(device)
+    target_network.load_state_dict(q_network.state_dict())
 
-    # Create model
-    model = PIDControllerNet(window_size=window_size, hidden_size=hidden_size).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(q_network.parameters(), lr=config.learning_rate)
+    loss_fn = nn.SmoothL1Loss()
 
-    # Track the best epoch and its validation cost
-    best_epoch = float('inf')
-    best_cost = float('inf')
+    for epoch in range(config.epochs):
+        print(f"Epoch {epoch}")
+        # Run simulations to collect transitions.
+        sim_results = simulations.get_simulations(q_network, num_sims=config.num_sims, config=config, current_epoch=epoch)
+        for sim_data in tqdm(sim_results.values()):
+            replay_buffer.clear()
+            for transition in sim_data["buffer"][80:-80]:
+                replay_buffer.append(transition)
 
-    # Define the callback function for when the testing completes
-    def on_testing_complete(epoch, cost):
-        """Callback function to log results to TensorBoard and track the best epoch."""
-        nonlocal best_epoch, best_cost
-        if logging:
-            print(f"Epoch {epoch}, Validation Cost: {cost}")
-            writer.add_scalar('Metrics/Validation Cost', cost, epoch)
-        # Update the best epoch and cost if the current epoch is better
-        if cost < best_cost:
-            best_epoch = epoch
-            best_cost = cost
+            # Training: multiple updates per epoch
+            epoch_loss = 0
+            for mini_batch in range(config.num_mini_batches):
+                # Training: only if enough samples are available.
+                if len(replay_buffer) >= config.batch_size:
+                    batch_states, batch_actions, batch_rewards, batch_next_states, batch_dones = sample_batch(replay_buffer, config.batch_size)
 
-    # Setup SummaryWriter for TensorBoard logging
-    if logging:
-        writer = SummaryWriter()
+                    # Compute current Q-values for the chosen actions.
+                    current_q = q_network(batch_states).gather(1, batch_actions)
+                    with torch.no_grad():
+                        next_q = target_network(batch_next_states)
+                        max_next_q, _ = torch.max(next_q, dim=1, keepdim=True)
 
-    total_loss = 0
-    threads = []
+                        rescaled_rewards = (torch.clamp(batch_rewards, -5.0, 5.0) / 5.0)
+                        target_q = rescaled_rewards + (config.gamma * max_next_q * (1 - batch_dones))
 
-    for epoch in range(epochs):
-        epoch_loss = 0
+                    loss = loss_fn(current_q, target_q)
 
-        # Get all simulations
-        simulation_results = simulations.get_simulations(max_noise=0.0, num_sims=5)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(q_network.parameters(), 0.5)
+                    optimizer.step()
+                    epoch_loss += loss.item()
 
-        for i in range(5):
-            for file_name, simulation_data in simulation_results.items():
-                score = simulation_data.get("score")
-                tensor_data = simulation_data.get("buffer")
+        target_network.load_state_dict(q_network.state_dict())
+        print(f"Training Loss - {epoch}: {epoch_loss / config.num_mini_batches}")
 
-                run = TrainingRun(epoch, window_size=window_size, batch_size=batch_size,
-                                  optimizer=optimizer, model=model, loss_fn=loss_fn, clamp_min=clamp_min, clamp_max=clamp_max)
-
-                # Get the subset of data
-                tensor_data_subset = tensor_data[80:-80]
-
-                for row in tensor_data_subset:
-                    input_tensor = row[0].to(device)
-                    steer_torques = row[1]
-                    steer_cost_diff = row[2]
-                    steer_cost_total = row[3]
-                    run.train(input_tensor, steer_torques, steer_cost_diff, steer_cost_total)
-
-                # Add loss
-                epoch_loss += run.total_loss
-
-        # Track all epochs
-        total_loss += epoch_loss / len(simulation_results)
-
-        # Export model
-        export_model(epoch, prefix, window_size, model, optimizer, logging)
-
-        # Log to graph
-        if logging:
-            writer.add_scalar('Metrics/Training Loss', epoch_loss / len(simulation_results), epoch)
-            print(f"Epoch {epoch}, Average Loss: {epoch_loss / len(simulation_results)}")
-
-        # Start testing in a new thread with a callback
-        def threaded_testing(epoch, callback):
-            cost = test_models.start_testing(
-                f"{prefix}-{epoch}",
-                logging=False,
-                window_size=window_size,
-                executor=TESTING_EXECUTOR
-            )
-            callback(epoch, cost)  # Trigger callback with results
-
-        if analyze or epoch == epochs - 1:
-            test_thread = threading.Thread(target=threaded_testing, args=(epoch, on_testing_complete))
-            test_thread.start()
-            threads.append(test_thread)
-
-    # Ensure all threads complete before concluding training
-    for t in threads:
-        t.join()
-
-    if logging:
-        print("\nTraining completed!")
-        writer.close()
-
-    # Return the best epoch and its validation cost
-    return best_epoch, best_cost
+        # Export the model at intervals.
+        if epoch % config.export_interval == 0:
+            export_model(epoch, prefix, config.window_size, q_network, optimizer)
 
 
 if __name__ == "__main__":
-    # Trial 2 finished with value: 48.776776926369166 and parameters: {'batch_size': 43, 'window_size': 34, 'hidden_size': 102}. Best is trial 2 with value: 48.776776926369166.
-    best_epoch, best_cost = start_training(epochs=35, analyze=True, logging=True, lr=1.4e-5, seed=962,
-                                           batch_size=44, window_size=30, hidden_size=80, clamp_min=-4, clamp_max=1)
-    print(best_epoch, best_cost)
+    main()
