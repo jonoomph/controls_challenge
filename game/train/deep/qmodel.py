@@ -1,14 +1,15 @@
 import torch
 import torch.nn as nn
+from game.train.deep import config
 
 
 class QSteeringNet(nn.Module):
-    def __init__(self, input_size=15, hidden_size=80, num_layers=2, window_size=7, action_space=257):
+    def __init__(self, input_size=15, hidden_size=80, num_layers=2, window_size=20):
         super(QSteeringNet, self).__init__()
         self.window_size = window_size
         self.hidden_size = hidden_size
         self.input_size = input_size
-        self.action_space = action_space
+        self.action_space = config.action_space
         self.num_layers = num_layers
 
         # LSTM to process the time-series input
@@ -16,7 +17,7 @@ class QSteeringNet(nn.Module):
         self.fc1 = nn.Linear(hidden_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         # Final layer outputs Q-values for each discrete action
-        self.fc3 = nn.Linear(hidden_size, action_space)
+        self.fc3 = nn.Linear(hidden_size, self.action_space)
         self.init_weights()
 
     def init_weights(self):

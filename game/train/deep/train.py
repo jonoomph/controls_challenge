@@ -22,6 +22,9 @@ torch.manual_seed(config.seed)
 
 # Global replay buffer (holds transitions from simulations)
 replay_buffer = deque(maxlen=config.replay_buffer_size)
+q_values_history = []
+sample_state = torch.randn(1, config.window_size, config.input_size).to(device)
+
 
 
 def sample_batch(buffer, batch_size):
@@ -94,6 +97,55 @@ def plot_data(epoch, replay_buffer):
     plt.title(f"Reward Distribution at Epoch {epoch}")
     plt.show()
 
+
+def plot_q_values(q_network, sample_state, epoch, q_values_history):
+    """
+    Plot Q-values for all 257 actions across training epochs.
+
+    Args:
+        q_network: Trained Q-network
+        sample_state: Fixed sample input state (for consistent comparison)
+        epoch: Current epoch number
+        q_values_history: List to store Q-values across epochs
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # Get Q-values for all actions using current network
+    with torch.no_grad():
+        q_values = q_network(sample_state).cpu().numpy().flatten()
+
+    # Store in history (transposed for plotting)
+    q_values_history.append(q_values)
+
+    # Convert to numpy array
+    q_array = np.array(q_values_history)
+
+    # Create plot
+    plt.figure(figsize=(12, 8))
+
+    # Plot heatmap
+    plt.imshow(q_array.T,  # Transpose to get actions on y-axis
+               aspect='auto',
+               cmap='viridis',
+               origin='lower')
+
+    # Formatting
+    plt.title(f"Q-value Distribution Across Actions (Epoch {epoch})")
+    plt.xlabel("Training Epoch")
+    plt.ylabel("Action Index")
+    plt.colorbar(label="Q-value")
+
+    # Action axis formatting
+    plt.yticks(np.arange(0, 257, 50), labels=np.arange(0, 257, 50))
+
+    # Epoch axis formatting
+    if epoch > 10:
+        plt.xticks(np.arange(0, epoch, max(1, epoch // 10)))
+
+    plt.tight_layout()
+    plt.show()
+
 def train(replay_buffer, q_network, target_network, loss_fn, optimizer, validate=False):
     # Training: multiple updates per epoch
     total_loss =  0.0
@@ -107,10 +159,9 @@ def train(replay_buffer, q_network, target_network, loss_fn, optimizer, validate
             with torch.no_grad():
                 next_q = target_network(batch_next_states)
                 max_next_q, _ = torch.max(next_q, dim=1, keepdim=True)
-                # Clip max_next_q to a reasonable range (e.g., ±10)
-                #max_next_q = torch.clamp(max_next_q, min=-10, max=10)
                 target_q = batch_rewards + (config.gamma * max_next_q)
 
+            # Loss and backprop
             loss = loss_fn(current_q, target_q)
             total_loss += loss.item()
 
@@ -126,8 +177,15 @@ def train(replay_buffer, q_network, target_network, loss_fn, optimizer, validate
             #     max_current_q = torch.max(current_q_values).item()  # Max Q-value for current states
             #     max_next_q = torch.max(next_q).item()  # Max Q-value for next states (from target network)
             #     # print(f"Epoch {epoch}, Loss: {loss.item():.4f}, Max Current Q: {max_current_q:.2f}, Max Next Q: {max_next_q:.2f}")
-    target_network.load_state_dict(q_network.state_dict())
-    return total_loss
+
+    # Soft target network update
+    tau = 0.05  # Mixing factor: 5% new weights, 95% old target weights
+    with torch.no_grad():
+        for target_param, q_param in zip(target_network.parameters(), q_network.parameters()):
+            target_param.data.mul_(1 - tau)
+            target_param.data.add_(tau * q_param.data)
+
+    return total_loss / config.num_mini_batches
 
 def main():
     prefix = ''.join(random.choice(string.ascii_letters) for _ in range(5))
@@ -137,15 +195,13 @@ def main():
         input_size=config.input_size,
         hidden_size=config.hidden_size,
         num_layers=config.num_layers,
-        window_size=config.window_size,
-        action_space=config.action_space
+        window_size=config.window_size
     ).to(device)
     target_network = QSteeringNet(
         input_size=config.input_size,
         hidden_size=config.hidden_size,
         num_layers=config.num_layers,
-        window_size=config.window_size,
-        action_space=config.action_space
+        window_size=config.window_size
     ).to(device)
     target_network.load_state_dict(q_network.state_dict())
 
@@ -161,7 +217,7 @@ def main():
         for transition in val_data["buffer"][80:-80]:
             validate_buffer.append(transition)
 
-    plot_data(-1, validate_buffer)
+    #plot_data(-1, validate_buffer)
 
     max_noise = config.max_noise
     for epoch in range(config.epochs):
@@ -193,6 +249,7 @@ def main():
         # Export the model at intervals.
         if epoch % config.export_interval == 0:
             export_model(epoch, prefix, config.window_size, q_network, optimizer)
+            #plot_q_values(q_network, sample_state, epoch, q_values_history)
 
 
 if __name__ == "__main__":

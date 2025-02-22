@@ -4,6 +4,7 @@ import torch
 from . import BaseController
 from . import experimental, pid_model
 from game.train.deep.qmodel import QSteeringNet
+from game.train.deep import config
 
 
 class Controller(BaseController):
@@ -16,8 +17,7 @@ class Controller(BaseController):
     torque in the range [-2.5, 2.5].
     """
 
-    def __init__(self, model_path="/home/jonathan/apps/controls_challenge/game/train/deep/onnx/model-UaGuX-22.pth",
-                 window_size=30, action_space=257):
+    def __init__(self, model_path="/home/jonathan/apps/controls_challenge/game/train/deep/onnx/model-UaGuX-7.pth", window_size=30):
         """
         Args:
             model_path (str): Path to the saved PyTorch model (.pth file).
@@ -37,9 +37,9 @@ class Controller(BaseController):
         self.internal_pid = experimental.Controller()
         self.internal_teacher_pid = pid_model.Controller()
         self.takeover = False
-        self.action_space = action_space
-        self.min_torque = -2.5
-        self.max_torque = 2.5
+        self.action_space = config.action_space
+        self.min_torque = config.steering_torque_range[0]
+        self.max_torque = config.steering_torque_range[1]
 
     def average(self, values):
         """Calculate the average of a list of values, handling empty lists gracefully."""
@@ -112,7 +112,7 @@ class Controller(BaseController):
 
             # DEBUG
             #control_signal = pid_teacher
-            print(control_signal, pid_teacher)
+            print(self.map_action(action_index), pid_teacher)
 
         # 6) Until a certain simulation step, rely on the PID
         if self.step_idx < 105:

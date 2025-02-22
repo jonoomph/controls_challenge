@@ -5,7 +5,7 @@ import math
 import random
 from collections import defaultdict
 from pathlib import Path
-from reward import compute_reward
+from reward import compute_reward, RewardNormalizer
 
 import numpy as np
 import torch
@@ -172,12 +172,12 @@ def get_simulations(q_model, num_sims, config, current_epoch=0, max_noise=0):
         cost_history = []
         reward_history = []
         for t in range(20, len(sim.data)):
+            # Simulate time step
             sim.step()
             if t >= 101:
+                # Compute custom reward
                 prev_diff = sim.target_lataccel_history[-2] - sim.current_lataccel_history[-2]
                 current_diff = sim.target_lataccel_history[-1] - sim.current_lataccel_history[-1]
-
-                # Compute custom reward
                 reward = compute_reward(abs(prev_diff) - abs(current_diff), current_diff)
 
                 total_cost = sim.compute_cost().get('total_cost')
@@ -185,15 +185,17 @@ def get_simulations(q_model, num_sims, config, current_epoch=0, max_noise=0):
                     reward_history.append(reward)
                     cost_history.append(total_cost)
 
-                    # Ensure we have enough cost history for weighted diff calculation
-                    if len(cost_history) >= 4:
-                        # Calculate weighted score diff
-                        weighted_cost = sum(weights[i] * (cost_history[-3 + i] - cost_history[-4 + i]) for i in range(3))
-                        weighted_reward = sum(weights[i] * reward_history[-3 + i] for i in range(3))
+        # Normalize rewards
+        normalized_rewards = RewardNormalizer(reward_history).normalize(reward_history)
 
-                        # Assign weighted diff to replay buffer (3 steps earlier)
-                        last = dual_controller.replay_buffer[-1]
-                        dual_controller.replay_buffer[-1] = (last[0], last[1], weighted_reward, last[3], last[4])
+        # Loop back through data (spreading rewards)
+        for t in range(80, len(sim.data)):
+            # Calculate weighted score diff
+            weighted_reward = sum(weights[i] * normalized_rewards[-3 + i] for i in range(3))
+
+            # Assign weighted diff to replay buffer (3 steps earlier)
+            last = dual_controller.replay_buffer[-1]
+            dual_controller.replay_buffer[-1] = (last[0], last[1], weighted_reward, last[3], last[4])
 
         results[file_name] = {"score": sim.compute_cost(), "buffer": dual_controller.replay_buffer}
 
