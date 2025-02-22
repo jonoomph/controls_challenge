@@ -4,8 +4,8 @@
 # Training parameters
 epochs = 100
 batch_size = 44
-learning_rate = 1e-5
-gamma = 0.99      # Discount factor
+learning_rate = 3e-5
+gamma = 0.95      # Discount factor
 n_step = 3        # Use 3-step returns (you can try 5)
 
 # Exploration (epsilon) parameters
@@ -14,7 +14,7 @@ final_epsilon = 0.1
 epsilon_decay_epochs = 50  # Epsilon decays linearly over the first 10 epochs
 
 # Noise and action parameters
-max_noise = 0.02
+max_noise = 0.530
 action_space = 257         # Discrete actions from -128 to 128
 steering_torque_range = (-2.5, 2.5)
 

@@ -1,6 +1,7 @@
 import tinyphysics
 from tinyphysics import CONTEXT_LENGTH
 from controllers import BaseController, pid, replay, pid_top, pid_model, experimental
+from train.deep.reward import compute_reward
 from draw_game import *
 import numpy as np
 
@@ -10,6 +11,7 @@ TINY_DATA_DIR = "../data"
 MODEL_PATH = "../models/tinyphysics.onnx"
 HISTORY = { "torques": [], "diffs": [] }
 DEBUG = True
+previous_diff = None
 
 
 def get_best_torque_sequence(history, block_size=10, lag=3):
@@ -106,7 +108,7 @@ class Controller(BaseController):
             wheel.force_constant(0.5)
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
-        global BASE_FPS, CHECKPOINT
+        global BASE_FPS, CHECKPOINT, previous_diff
         pygame.event.pump()
 
         # Update internal controllers
@@ -115,6 +117,13 @@ class Controller(BaseController):
             future_lataccel = future_plan.lataccel[4] # Use future target lataccel (if available)
         pid_action = self.internal_pid.update(future_lataccel, current_lataccel, state, future_plan, steer)
         replay_torque = self.internal_replay.update(target_lataccel, current_lataccel, state, future_plan, steer)
+
+        # Compute custom reward
+        reward = 0
+        current_diff = target_lataccel - current_lataccel
+        if previous_diff:
+            reward = compute_reward(abs(previous_diff) - abs(current_diff), current_diff)
+        previous_diff = current_diff
 
         # Determine position on road and SIM index
         index = len(self.torques)
@@ -213,6 +222,7 @@ class Controller(BaseController):
         draw_car(WIDTH // 2, HEIGHT - 50, 0, target_lataccel - current_lataccel)
         draw_steering(torque_output, self.ctrl_increment, self.ctrl_pressed)
         draw_speedometer(state.v_ego * 2.23694, 0, 100)
+        draw_reward(reward)
         draw_score(self.lat_accel_cost, self.jerk_cost, self.total_cost, FPS)
         draw_level(self.level)
         if keys[pygame.K_SPACE]:

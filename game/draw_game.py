@@ -224,6 +224,37 @@ def draw_speedometer(current_speed, min_speed=0, max_speed=120):
     screen.blit(speed_text, text_rect)
 
 
+def draw_reward(reward):
+    # Ensure reward is clamped between 0 and 1
+    reward = max(0, min(reward, 1))
+
+    bar_width = 100
+    bar_height = 10
+
+    # Position the reward bar centered horizontally below the speedometer.
+    # The draw_speedometer function uses center_position = (200, HEIGHT - 100),
+    # so we center the bar at x=200 and position it about 60 pixels below the gauge.
+    x = 200 - bar_width // 2
+    y = (HEIGHT - 100) + 60
+
+    # Calculate the width of the filled portion based on the reward value
+    filled_width = int(bar_width * reward)
+
+    # Compute the bar color to fade between red (when reward is 0) and green (when reward is 1)
+    bar_color = (int((1 - reward) * 255), int(reward * 255), 0)
+
+    # Draw the background of the bar (a dark grey rectangle)
+    background_rect = pygame.Rect(x, y, bar_width, bar_height)
+    pygame.draw.rect(screen, (50, 50, 50), background_rect)
+
+    # Draw the filled portion of the bar
+    filled_rect = pygame.Rect(x, y, filled_width, bar_height)
+    pygame.draw.rect(screen, bar_color, filled_rect)
+
+    # Optionally, draw a white border around the progress bar
+    pygame.draw.rect(screen, (255, 255, 255), background_rect, 1)
+
+
 def draw_steering(torque_value, increment, ctrl_pressed):
     # Map torque value (-2 to 2) to degrees (-360 to 360)
     rotation_angle = -torque_value * 90  # Each torque unit corresponds to 180 degrees (since 2*180=360)

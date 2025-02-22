@@ -1,9 +1,11 @@
 # simulations.py
+import json
 import os
 import math
 import random
 from collections import defaultdict
 from pathlib import Path
+from reward import compute_reward
 
 import numpy as np
 import torch
@@ -16,7 +18,7 @@ import config
 
 # DualController: uses the supervised PID model or the Q-network via epsilon-greedy.
 class DualController:
-    def __init__(self, pid_model, q_model, config, current_epoch=0):
+    def __init__(self, pid_model, q_model, config, current_epoch=0, max_noise=0):
         self.pid_model = pid_model      # Teacher model
         self.q_model = q_model          # Q-network (can be None initially)
         self.config = config
@@ -26,7 +28,7 @@ class DualController:
         self.replay_buffer = []
 
         # Generate OU noise with a randomized sigma between 0.0 and max_noise
-        sigma = random.uniform(0.0, config.max_noise)
+        sigma = random.uniform(0.0, max_noise)
         self.noise = self.generate_ou_noise(T=600, sigma=sigma)
 
         self.input_window = []          # To accumulate individual state vectors
@@ -63,6 +65,8 @@ class DualController:
         return min_torque + (max_torque - min_torque) * (action_index / (self.config.action_space - 1))
 
     def update(self, target_lataccel, current_lataccel, state, future_plan, steer):
+        pid_model_action = self.pid_model.update(target_lataccel, current_lataccel, state, future_plan, steer)
+
         # Construct state input as in the PID model.
         future_segments = [(1, 2), (2, 3), (3, 4)]
         diff_values = {
@@ -81,7 +85,7 @@ class DualController:
 
         # If we haven't yet collected a full window, fall back to the PID model.
         if len(self.input_window) < self.config.window_size:
-            action = self.pid_model.update(target_lataccel, current_lataccel, state, future_plan, steer)
+            action = pid_model_action
             full_window = None
         else:
             # Build the full window from the most recent state vectors.
@@ -96,7 +100,7 @@ class DualController:
                 action_index = torch.argmax(q_values, dim=1).item()
                 action = self.map_action(action_index)
             else:
-                action = self.pid_model.update(target_lataccel, current_lataccel, state, future_plan, steer)
+                action = pid_model_action
 
         # Add OU noise.
         noise_value = self.noise[len(self.prev_actions)] if len(self.noise) > len(self.prev_actions) else 0
@@ -126,7 +130,7 @@ class DualController:
 
     def store_transition(self, state, action, reward, next_state, done):
         # Convert action to integer index if it's continuous
-        if isinstance(action, float):  # Check if it's a float (steering torque)
+        if isinstance(action, float):
             action = round((action - self.config.steering_torque_range[0]) /
                            (self.config.steering_torque_range[1] - self.config.steering_torque_range[0]) * (self.config.action_space - 1))
 
@@ -135,7 +139,7 @@ class DualController:
         self.replay_buffer.append((state, action, reward, next_state, done))
 
 
-def get_simulations(q_model, num_sims, config, current_epoch=0):
+def get_simulations(q_model, num_sims, config, current_epoch=0, max_noise=0):
     # Initialize the physics model.
     model_path = Path('../../../models/tinyphysics.onnx')
     tinyphysicsmodel = tinyphysics.TinyPhysicsModel(model_path, debug=False)
@@ -145,8 +149,10 @@ def get_simulations(q_model, num_sims, config, current_epoch=0):
     random.shuffle(file_list)
     file_list = file_list[:num_sims]
 
-    results = defaultdict(dict)
+    #DEBUG
+    #file_list = json.load(open("levels.json"))[:num_sims]
 
+    results = defaultdict(dict)
     for file_name in tqdm(file_list):
         level_num = int(os.path.splitext(file_name)[0])
         data_path = os.path.join('../../../data/', f'{level_num:05}.csv')
@@ -154,7 +160,7 @@ def get_simulations(q_model, num_sims, config, current_epoch=0):
         # Initialize the PID teacher.
         pid_controller = pid_model.Controller()
         # Create the dual controller.
-        dual_controller = DualController(pid_controller, q_model, config, current_epoch)
+        dual_controller = DualController(pid_controller, q_model, config, current_epoch, max_noise)
         sim = tinyphysics.TinyPhysicsSimulator(
             tinyphysicsmodel, str(data_path),
             controller=dual_controller,
@@ -164,22 +170,30 @@ def get_simulations(q_model, num_sims, config, current_epoch=0):
         # Run the simulation.
         weights = [0.028, 0.141, 0.831]
         cost_history = []
+        reward_history = []
         for t in range(20, len(sim.data)):
             sim.step()
             if t >= 101:
+                prev_diff = sim.target_lataccel_history[-2] - sim.current_lataccel_history[-2]
+                current_diff = sim.target_lataccel_history[-1] - sim.current_lataccel_history[-1]
+
+                # Compute custom reward
+                reward = compute_reward(abs(prev_diff) - abs(current_diff), current_diff)
+
                 total_cost = sim.compute_cost().get('total_cost')
                 if not math.isnan(total_cost):
+                    reward_history.append(reward)
                     cost_history.append(total_cost)
 
                     # Ensure we have enough cost history for weighted diff calculation
                     if len(cost_history) >= 4:
                         # Calculate weighted score diff
                         weighted_cost = sum(weights[i] * (cost_history[-3 + i] - cost_history[-4 + i]) for i in range(3))
+                        weighted_reward = sum(weights[i] * reward_history[-3 + i] for i in range(3))
 
                         # Assign weighted diff to replay buffer (3 steps earlier)
                         last = dual_controller.replay_buffer[-1]
-                        dual_controller.replay_buffer[-1] = (last[0], last[1], weighted_cost, last[3], last[4])
-
+                        dual_controller.replay_buffer[-1] = (last[0], last[1], weighted_reward, last[3], last[4])
 
         results[file_name] = {"score": sim.compute_cost(), "buffer": dual_controller.replay_buffer}
 
